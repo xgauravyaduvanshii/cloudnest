@@ -161,6 +161,12 @@ npm run build
 
 ## SDK Example
 
+Install the official published SDK package:
+
+```bash
+npm install @cloudnest/sdk
+```
+
 ```ts
 import { CloudNestClient } from "@cloudnest/sdk";
 
@@ -222,4 +228,3 @@ Before real deployment, at minimum review and harden:
 This project is licensed under the CloudNest Educational Use License. See [LICENSE](./LICENSE).
 
 In short: you may use, study, copy, and modify this project for educational and demo purposes, but you may not use it as-is in production or as a commercial storage service.
-

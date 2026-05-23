@@ -49,7 +49,13 @@ app.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     res.status(HTTPSTATUS.OK).json({
-      message: 'Hello Subscribe to the channel',
+      name: 'cloudnest',
+      message: 'CloudNest API is running',
+      sdk: {
+        package: '@cloudnest/sdk',
+        install: 'npm install @cloudnest/sdk',
+        npm: 'https://www.npmjs.com/package/@cloudnest/sdk',
+      },
     });
   }),
 );

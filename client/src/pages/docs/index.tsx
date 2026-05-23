@@ -43,6 +43,9 @@ const Docs = () => {
           <Card className="mb-5">
             <CardHeader>
               <CardTitle>Installation</CardTitle>
+              <CardDescription>
+                Official npm package name: @cloudnest/sdk
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-hidden rounded-lg border">
@@ -53,7 +56,7 @@ const Docs = () => {
                     background: backgroundColor,
                   }}
                 >
-                  {"npm install @cloudnest/sdk"}
+                  {"npm install @cloudnest/sdk\n# or\npnpm add @cloudnest/sdk"}
                 </SyntaxHighlighter>
               </div>
             </CardContent>
@@ -288,10 +291,14 @@ try {
 
           <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              📦 Package Information
+              Package Information
             </h3>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              For detailed information on all methods, types, and advanced
+              Use only the official package name{" "}
+              <code className="rounded bg-gray-200 px-1 py-0.5 text-xs dark:bg-gray-800">
+                @cloudnest/sdk
+              </code>
+              . For detailed information on all methods, types, and advanced
               usage, visit the{" "}
               <a
                 href="https://www.npmjs.com/package/@cloudnest/sdk"

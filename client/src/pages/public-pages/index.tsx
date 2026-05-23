@@ -107,7 +107,7 @@ export const SDKPage = () => (
     <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
       <div className="space-y-4">
         {[
-          ["Install", "Add the SDK package to your Node or browser app."],
+          ["Install", "Add the official @cloudnest/sdk package to your Node or browser app."],
           ["Create a client", "Pass your CloudNest API base URL and API key."],
           ["Upload files", "Send provider, folder, and storage account options when needed."],
           ["Use responses", "Read file ids, public view URLs, provider, and metadata."],
@@ -124,24 +124,21 @@ export const SDKPage = () => (
         <CodeBlock>{`import { CloudNestClient } from "@cloudnest/sdk";
 
 const cloudnest = new CloudNestClient({
-  baseUrl: "https://your-domain.com/api/v1",
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
   apiKey: process.env.CLOUDNEST_API_KEY,
 });
 
-const result = await cloudnest.files.upload({
-  files: [file],
+const result = await cloudnest.uploadFiles(file, {
   provider: "GOOGLE_DRIVE",
-  folderId: "optional-folder-id",
+  providerFolderId: "optional-google-drive-folder-id",
 });
 
-console.log(result.data[0].url);`}</CodeBlock>
-        <CodeBlock>{`await cloudnest.files.upload({
-  files: [file],
+console.log(result.files[0].url);`}</CodeBlock>
+        <CodeBlock>{`await cloudnest.uploadFiles(file, {
   provider: "S3", // S3 | GOOGLE_DRIVE | TELEGRAM
 });
 
-await cloudnest.files.upload({
-  files: [file],
+await cloudnest.uploadFiles(file, {
   provider: "GOOGLE_DRIVE",
   storageAccountId: "account-id",
   providerFolderId: "drive-folder-id",

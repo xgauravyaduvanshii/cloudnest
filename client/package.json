@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "CloudNest web client with SDK docs for @cloudnest/sdk",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
