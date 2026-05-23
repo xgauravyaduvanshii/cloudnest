@@ -44,6 +44,28 @@ const result = await cloudnest.uploadFiles("./invoice.pdf", {
 console.log(result.data);
 ```
 
+## File Management
+
+```ts
+const files = await cloudnest.listFiles({
+  provider: "GOOGLE_DRIVE",
+});
+
+const file = await cloudnest.getFile("file-id");
+const preview = await cloudnest.getPreviewUrl("file-id");
+const playable = await cloudnest.getPlayableUrl("file-id");
+const download = await cloudnest.getDownloadUrl("file-id");
+
+await cloudnest.downloadFile("file-id", {
+  destinationPath: "./downloaded-file.bin",
+});
+
+await cloudnest.deleteFile("file-id");
+await cloudnest.deleteFiles(["file-id-1", "file-id-2"]);
+```
+
+For video and MP3/audio playback, call `getPlayableUrl(fileId)`. If `canPlay` is true, use `playUrl` as the `src` for a `<video controls>` or `<audio controls>` element.
+
 ## Backend Proxy Pattern
 
 Use this pattern when integrating CloudNest into a web app. Keep the API key server-side.
@@ -123,8 +145,9 @@ const result = await response.json();
 3. Store the API key in an environment variable.
 4. Use `apiUrl: "https://cloudnest.urmate.tech/api/v1"`.
 5. Use `provider: "GOOGLE_DRIVE"` when S3 is disabled or Google Drive is desired.
-6. Handle invalid API key, provider disabled, account not connected, file type not allowed, and quota exceeded.
-7. Never expose secrets in code, commits, logs, screenshots, or browser bundles.
+6. Use `getPreviewUrl`, `getPlayableUrl`, `getDownloadUrl`, `downloadFile`, `deleteFile`, and `deleteFiles` for API-key file management.
+7. Handle invalid API key, provider disabled, account not connected, file type not allowed, quota exceeded, and file not found.
+8. Never expose secrets in code, commits, logs, screenshots, or browser bundles.
 
 ## Safety Note
 

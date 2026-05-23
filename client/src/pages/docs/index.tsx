@@ -96,6 +96,45 @@ await client.uploadFiles(files, {
 
           <Card className="mb-6">
             <CardHeader>
+              <CardTitle>File Management</CardTitle>
+              <CardDescription>
+                List, preview, play, download, and delete files with the same API key.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-hidden rounded-lg border">
+                <SyntaxHighlighter
+                  language="javascript"
+                  style={codeTheme}
+                  customStyle={{
+                    background: backgroundColor,
+                    padding: "1rem",
+                  }}
+                >
+                  {`const files = await client.listFiles({
+  provider: "GOOGLE_DRIVE",
+  pageSize: 20,
+});
+
+const file = await client.getFile("file-id");
+const preview = await client.getPreviewUrl("file-id");
+const playable = await client.getPlayableUrl("file-id");
+
+// Use playable.playUrl in <video controls> or <audio controls>.
+const download = await client.getDownloadUrl("file-id");
+await client.downloadFile("file-id", {
+  destinationPath: "./downloaded-file.bin",
+});
+
+await client.deleteFile("file-id");
+await client.deleteFiles(["file-id-1", "file-id-2"]);`}
+                </SyntaxHighlighter>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mb-6">
+            <CardHeader>
               <CardTitle>Quick Start</CardTitle>
               <CardDescription>
                 Upload files with just a few lines of code.

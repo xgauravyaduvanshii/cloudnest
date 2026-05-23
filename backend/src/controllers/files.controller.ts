@@ -12,6 +12,9 @@ import {
   deleteGoogleDriveItemService,
   downloadFilesService,
   getAllFilesService,
+  getFileDetailsService,
+  getFilePreviewService,
+  getFilesForApiKeyService,
   getFileUrlService,
   getGoogleDriveItemPreviewStreamService,
   listGoogleDriveItemsService,
@@ -101,6 +104,83 @@ export const uploadFilesViaApiController = asyncHandler(
     });
 
     return res.status(HTTPSTATUS.OK).json(results);
+  },
+);
+
+export const getApiFilesController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    const filter = {
+      keyword: req.query.keyword as string | undefined,
+      folderId: req.query.folderId
+        ? folderIdSchema.parse(req.query.folderId)
+        : null,
+      provider: req.query.provider
+        ? providerSchema.parse(req.query.provider)
+        : undefined,
+    };
+    const pagination = {
+      pageSize: parseInt(req.query.pageSize as string) || 20,
+      pageNumber: parseInt(req.query.pageNumber as string) || 1,
+    };
+
+    const result = await getFilesForApiKeyService(userId, filter, pagination);
+
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'Files retrieved successfully',
+      ...result,
+    });
+  },
+);
+
+export const getApiFileController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const fileId = fileIdSchema.parse(req.params.fileId);
+    const file = await getFileDetailsService(req.user?._id, fileId);
+
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'File retrieved successfully',
+      file,
+    });
+  },
+);
+
+export const getApiFilePreviewController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const fileId = fileIdSchema.parse(req.params.fileId);
+    const result = await getFilePreviewService(req.user?._id, fileId);
+
+    return res.status(HTTPSTATUS.OK).json({
+      message: result.canPlay
+        ? 'Playable media URL created successfully'
+        : 'Preview URL created successfully',
+      ...result,
+    });
+  },
+);
+
+export const getApiFileDownloadController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const fileId = fileIdSchema.parse(req.params.fileId);
+    const result = await downloadFilesService(req.user?._id, [fileId]);
+
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'File download URL created successfully',
+      downloadUrl: result?.url,
+      isZip: result?.isZip || false,
+    });
+  },
+);
+
+export const deleteApiFileController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const fileId = fileIdSchema.parse(req.params.fileId);
+    const result = await deleteFilesService(req.user?._id, [fileId]);
+
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'File deleted successfully',
+      ...result,
+    });
   },
 );
 

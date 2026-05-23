@@ -19,12 +19,62 @@ pnpm add @cloudnest/sdk
 import { CloudNestClient } from "@cloudnest/sdk";
 
 const client = new CloudNestClient({
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
   apiKey: "your-api-key",
 });
 
 // Upload files
 const result = await client.uploadFiles(files);
 console.log(result.data);
+```
+
+## File Management
+
+All file management methods use the same API key.
+
+```typescript
+// List files owned by the API key user.
+const files = await client.listFiles({
+  provider: "GOOGLE_DRIVE",
+  pageSize: 20,
+});
+
+// Get metadata for one file.
+const file = await client.getFile("file-id");
+
+// Get an inline preview URL for images, PDFs, text, video, and audio.
+const preview = await client.getPreviewUrl("file-id");
+
+// Audio/video helper. Use playUrl in <audio> or <video>.
+const playable = await client.getPlayableUrl("file-id");
+
+// Get a download URL without downloading bytes.
+const download = await client.getDownloadUrl("file-id");
+
+// Download bytes. In Node.js, pass destinationPath to save to disk.
+await client.downloadFile("file-id", {
+  destinationPath: "./downloaded-file.bin",
+});
+
+// Delete one or many files.
+await client.deleteFile("file-id");
+await client.deleteFiles(["file-id-1", "file-id-2"]);
+```
+
+### Preview, Video, And MP3 Playback
+
+```typescript
+const preview = await client.getPlayableUrl("file-id");
+
+if (preview.canPlay && preview.suggestedElement === "video") {
+  videoElement.src = preview.playUrl!;
+  videoElement.controls = true;
+}
+
+if (preview.canPlay && preview.suggestedElement === "audio") {
+  audioElement.src = preview.playUrl!;
+  audioElement.controls = true;
+}
 ```
 
 ### Provider Uploads
@@ -125,7 +175,11 @@ try {
 Full TypeScript support with type definitions:
 
 ```typescript
-import type { UploadResponseType } from "@cloudnest/sdk/types";
+import type {
+  CloudNestFile,
+  FilePreviewResponse,
+  UploadResponseType,
+} from "@cloudnest/sdk/types";
 
 const result: UploadResponseType = await client.uploadFiles(files);
 ```

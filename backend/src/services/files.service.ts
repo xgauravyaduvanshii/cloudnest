@@ -82,6 +82,34 @@ const getFileStorageAccount = async (file: FileDocument) => {
   return account;
 };
 
+const getMediaType = (mimeType: string) => {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (mimeType.startsWith('text/')) return 'text';
+  return 'file';
+};
+
+const toPublicFile = (file: FileDocument) => {
+  const { storageKey, providerFileId, providerMetadata, ...publicFile } = file;
+  return {
+    ...publicFile,
+    url: getPublicFileUrl(file._id),
+    previewUrl: getPublicFileUrl(file._id),
+    downloadUrl: getPublicFileUrl(file._id),
+    mediaType: getMediaType(file.mimeType),
+    canPreviewInline:
+      file.mimeType.startsWith('image/') ||
+      file.mimeType.startsWith('video/') ||
+      file.mimeType.startsWith('audio/') ||
+      file.mimeType === 'application/pdf' ||
+      file.mimeType.startsWith('text/'),
+    canPlay:
+      file.mimeType.startsWith('video/') || file.mimeType.startsWith('audio/'),
+  };
+};
+
 const assertFolderAccess = async (
   userId: string,
   provider: StorageProviderType,
@@ -319,12 +347,7 @@ export const getAllFilesService = async (
   ]);
 
   const filesWithUrls = files.map((file) => {
-    const { storageKey, ...publicFile } = file;
-
-    return {
-      ...publicFile,
-      url: getPublicFileUrl(file._id),
-    };
+    return toPublicFile(file);
   });
 
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -340,6 +363,88 @@ export const getAllFilesService = async (
       totalPages,
       skip,
     },
+  };
+};
+
+export const getFilesForApiKeyService = async (
+  userId: string | undefined,
+  filter: {
+    keyword?: string;
+    folderId?: string | null;
+    provider?: StorageProviderType;
+  },
+  pagination: { pageSize: number; pageNumber: number },
+) => {
+  if (!userId) throw new UnauthorizedException('Unauthorized access');
+
+  const { keyword, folderId, provider } = filter;
+  if (folderId && !provider) {
+    throw new BadRequestException('Provider is required when filtering by folder');
+  }
+  if (provider) await assertFolderAccess(userId, provider, folderId);
+
+  const { pageSize, pageNumber } = pagination;
+  const skip = (pageNumber - 1) * pageSize;
+
+  const [files, totalCount] = await Promise.all([
+    FileModel.findAllByUser(userId, keyword, {
+      limit: pageSize,
+      offset: skip,
+    }, folderId || null, provider),
+    FileModel.countByUser(userId, keyword, folderId || null, provider),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  return {
+    files: files.map(toPublicFile),
+    pagination: {
+      pageSize,
+      pageNumber,
+      totalCount,
+      totalPages,
+      skip,
+    },
+  };
+};
+
+export const getFileDetailsService = async (
+  userId: string | undefined,
+  fileId: string,
+) => {
+  if (!userId) throw new UnauthorizedException('Unauthorized access');
+
+  const files = await FileModel.findByIdsForUser([fileId], userId);
+  const file = files[0];
+  if (!file) throw new NotFoundException('File not found');
+
+  return toPublicFile(file);
+};
+
+export const getFilePreviewService = async (
+  userId: string | undefined,
+  fileId: string,
+) => {
+  const file = await getFileDetailsService(userId, fileId);
+
+  return {
+    file,
+    previewUrl: file.previewUrl,
+    playUrl: file.canPlay ? file.previewUrl : null,
+    downloadUrl: file.downloadUrl,
+    mediaType: file.mediaType,
+    mimeType: file.mimeType,
+    canPreviewInline: file.canPreviewInline,
+    canPlay: file.canPlay,
+    suggestedElement: file.mimeType.startsWith('video/')
+      ? 'video'
+      : file.mimeType.startsWith('audio/')
+        ? 'audio'
+        : file.mimeType.startsWith('image/')
+          ? 'img'
+          : file.mimeType === 'application/pdf'
+            ? 'iframe'
+            : 'a',
   };
 };
 

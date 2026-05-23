@@ -1,13 +1,30 @@
 import { UnauthorizedError } from "./errors";
 import {
   CloudNestClientOptions,
+  DeleteFilesResponse,
+  DownloadFileOptions,
+  DownloadFileResult,
+  DownloadFilesResponse,
+  FilePreviewResponse,
+  FileResponse,
+  ListFilesOptions,
+  ListFilesResponse,
   UploadFilesOptions,
   UploadInput,
   UploadResponseType,
 } from "./types";
 import { uploadFiles } from "./uploadFile";
+import {
+  deleteFiles,
+  downloadFile,
+  getDownloadUrl,
+  getFile,
+  getFilePreview,
+  getPlayableMedia,
+  listFiles,
+} from "./file-api";
 
-const DEFAULT_API_URL = "https://cloudnest.onrender.com/api/v1";
+const DEFAULT_API_URL = "https://cloudnest.urmate.tech/api/v1";
 
 export class CloudNestClient {
   private apiKey: string;
@@ -31,5 +48,91 @@ export class CloudNestClient {
       isBrowser: this.isBrowser,
       ...uploadOptions,
     });
+  }
+
+  async listFiles(options: ListFilesOptions = {}): Promise<ListFilesResponse> {
+    return listFiles(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      options
+    );
+  }
+
+  async getFile(fileId: string): Promise<FileResponse> {
+    return getFile(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileId
+    );
+  }
+
+  async getPreviewUrl(fileId: string): Promise<FilePreviewResponse> {
+    return getFilePreview(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileId
+    );
+  }
+
+  async getPlayableUrl(fileId: string): Promise<FilePreviewResponse> {
+    return getPlayableMedia(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileId
+    );
+  }
+
+  async getDownloadUrl(
+    fileIds: string | string[]
+  ): Promise<DownloadFilesResponse> {
+    return getDownloadUrl(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileIds
+    );
+  }
+
+  async downloadFile(
+    fileId: string,
+    options: DownloadFileOptions = {}
+  ): Promise<DownloadFileResult> {
+    return downloadFile(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileId,
+      options
+    );
+  }
+
+  async deleteFile(fileId: string): Promise<DeleteFilesResponse> {
+    return deleteFiles(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileId
+    );
+  }
+
+  async deleteFiles(fileIds: string[]): Promise<DeleteFilesResponse> {
+    return deleteFiles(
+      {
+        apiKey: this.apiKey,
+        apiUrl: this.apiUrl,
+      },
+      fileIds
+    );
   }
 }

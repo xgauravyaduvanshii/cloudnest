@@ -30,6 +30,21 @@ const result = await cloudnest.uploadFiles("./file.pdf", {
 console.log(result.data);
 ```
 
+File management with API keys:
+
+```ts
+const files = await cloudnest.listFiles({ provider: "GOOGLE_DRIVE" });
+const file = await cloudnest.getFile("file-id");
+const preview = await cloudnest.getPreviewUrl("file-id");
+const playable = await cloudnest.getPlayableUrl("file-id");
+const download = await cloudnest.getDownloadUrl("file-id");
+await cloudnest.downloadFile("file-id", { destinationPath: "./file.bin" });
+await cloudnest.deleteFile("file-id");
+await cloudnest.deleteFiles(["file-id-1", "file-id-2"]);
+```
+
+Use `preview.previewUrl` for inline previews. Use `playable.playUrl` in `<video>` or `<audio>` when `playable.canPlay` is true.
+
 Important rules for AI agents:
 - Never hardcode, print, commit, or expose API keys.
 - Read API keys from `CLOUDNEST_API_KEY` or another secure environment variable.
@@ -39,6 +54,7 @@ Important rules for AI agents:
 - If S3 is disabled or the user wants Google Drive, pass `provider: "GOOGLE_DRIVE"`.
 - Optional upload fields are `storageAccountId` and `providerFolderId`.
 - Direct REST fallback is `POST https://cloudnest.urmate.tech/api/v1/files/upload` with `Authorization: Bearer <API_KEY>` and multipart field `files`.
+- API-key file routes include list, metadata, preview/play URLs, download URLs, and delete under `https://cloudnest.urmate.tech/api/v1/files`.
 - CloudNest is an educational project and should be reviewed before handling sensitive production workloads.
 
 Read the full prompt at:
