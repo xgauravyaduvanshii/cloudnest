@@ -1,0 +1,9 @@
+backend/node_modules
+backend/dist
+client/node_modules
+client/dist
+sdk/node_modules
+sdk/dist
+drivegram
+.git
+*.log

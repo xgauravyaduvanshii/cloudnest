@@ -1,0 +1,12 @@
+/node_modules
+/src
+.env
+
+tsconfig.json
+tsup.config.ts
+.changeset
+# Tests and configs
+__tests__/
+test/
+*.test.ts
+*.spec.ts

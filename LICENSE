@@ -1,0 +1,57 @@
+CloudNest Educational Use License
+Version 1.0
+
+Copyright (c) 2026 xgauravyaduvanshii
+
+This license applies to the CloudNest project source code in this repository,
+except for third-party dependencies, packages, assets, or files that include
+their own separate license notices.
+
+1. Permission
+
+Permission is granted, free of charge, to use, copy, study, modify, and share
+this project for educational, learning, classroom, research, portfolio, demo,
+and non-production experimentation purposes.
+
+2. Non-Production Restriction
+
+This project is not licensed for production use as-is.
+
+You may not use this project, a modified version of this project, or a hosted
+version of this project as a production service, commercial storage platform,
+paid SaaS product, customer-facing storage product, or system that stores real
+customer data or sensitive data without obtaining separate written permission
+from the copyright holder.
+
+3. Educational Notice Requirement
+
+Copies, forks, demos, and modified versions must keep a clear notice stating:
+
+"CloudNest is an educational project and is not production-ready."
+
+4. No Warranty
+
+THE PROJECT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, SECURITY, RELIABILITY, DATA DURABILITY,
+NON-INFRINGEMENT, OR PROVIDER COMPLIANCE.
+
+5. No Liability
+
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES, DATA LOSS, SECURITY INCIDENT, PROVIDER ACCOUNT ISSUE, SERVICE
+INTERRUPTION, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR
+OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE PROJECT OR THE USE
+OF THE PROJECT.
+
+6. Provider Responsibility
+
+Users are responsible for complying with the terms, policies, quotas, OAuth
+requirements, and security rules of any external provider they connect,
+including but not limited to Google Drive, Telegram, and AWS S3.
+
+7. Third-Party Licenses
+
+Third-party dependencies remain governed by their own licenses. This license
+does not replace or modify those third-party license terms.
+
