@@ -16,7 +16,7 @@ export async function request(
       method: options.method, //POST
       hostname: parsedUrl.hostname, //
       path: parsedUrl.pathname + parsedUrl.search,
-      port: parsedUrl.port || (parsedUrl.protocol === "https: " ? 443 : 80),
+      port: parsedUrl.port || (parsedUrl.protocol === "https:" ? 443 : 80),
       headers: {
         ...options.headers,
         ...(formData.getHeaders ? formData.getHeaders() : {}),

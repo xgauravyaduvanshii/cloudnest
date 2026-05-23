@@ -139,4 +139,4 @@ const result: UploadResponseType = await client.uploadFiles(files);
 
 ## License
 
-Apache-2.0
+CloudNest Educational Use License. This SDK is part of the CloudNest educational project and is not production-ready. See [LICENSE](./LICENSE).

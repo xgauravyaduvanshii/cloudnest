@@ -2,21 +2,24 @@
   "name": "@cloudnest/sdk",
   "version": "1.0.1",
   "description": "The official TypeScript library for the CloudNest API",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "/dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.js"
     },
     "./errors": {
+      "types": "./dist/errors.d.ts",
       "import": "./dist/errors.mjs",
-      "require": "./dist/errors.cjs"
+      "require": "./dist/errors.js"
     },
     "./types": {
+      "types": "./dist/types.d.ts",
       "import": "./dist/types.mjs",
-      "require": "./dist/types.cjs"
+      "require": "./dist/types.js"
     }
   },
   "scripts": {

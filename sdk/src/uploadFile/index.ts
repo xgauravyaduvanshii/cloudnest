@@ -1,5 +1,9 @@
 import NodeFormData from "form-data";
-import { ALLOWED_MIME_TYPES, AllowedMimeType } from "../constants/file-types";
+import {
+  ALLOWED_MIME_TYPES,
+  AllowedMimeType,
+  MIME_TYPES_BY_EXTENSION,
+} from "../constants/file-types";
 import {
   InvalidFileError,
   NetworkError,
@@ -30,6 +34,11 @@ function validateFileType(mimeType: string) {
   }
 }
 
+function getMimeTypeFromPath(filePath: string) {
+  const extension = filePath.split(".").pop()?.toLowerCase() || "";
+  return MIME_TYPES_BY_EXTENSION[extension];
+}
+
 export async function uploadFiles(
   files: UploadInput | UploadInput[],
   options: UploadOptions
@@ -57,11 +66,14 @@ export async function uploadFiles(
 
   for (const file of fileArray) {
     if (typeof file === "string" && !shouldUseBrowser) {
-      validateFileType(file);
+      const mimeType = getMimeTypeFromPath(file);
+      if (mimeType) validateFileType(mimeType);
 
       const { createReadStream } = await import("fs");
       const stream = createReadStream(file);
-      (formData as NodeFormData).append("files", stream);
+      (formData as NodeFormData).append("files", stream, {
+        contentType: mimeType || "application/octet-stream",
+      });
     } else if (
       Buffer.isBuffer(file) &&
       !shouldUseBrowser &&

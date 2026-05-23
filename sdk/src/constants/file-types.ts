@@ -33,3 +33,25 @@ export const ALLOWED_MIME_TYPES = [
 ] as const;
 
 export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
+
+export const MIME_TYPES_BY_EXTENSION: Record<string, AllowedMimeType> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  gif: "image/gif",
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  txt: "text/plain",
+  csv: "text/csv",
+  zip: "application/zip",
+  tar: "application/x-tar",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  wav: "audio/wav",
+  webm: "video/webm",
+  mp4: "video/mp4",
+};
