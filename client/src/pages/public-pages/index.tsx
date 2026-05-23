@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
+  Bot,
   Cloud,
   Code2,
   Github,
@@ -21,6 +22,7 @@ type PublicPageProps = {
 
 const publicLinks = [
   { label: "SDK", href: PUBLIC_ROUTES.SDK },
+  { label: "AI Prompt", href: PUBLIC_ROUTES.AI_PROMPT },
   { label: "Help", href: PUBLIC_ROUTES.HELP },
   { label: "Contact", href: PUBLIC_ROUTES.CONTACT },
   { label: "Privacy", href: PUBLIC_ROUTES.PRIVACY },
@@ -98,6 +100,155 @@ const CodeBlock = ({ children }: { children: string }) => (
   </pre>
 );
 
+const aiAgentPrompt = String.raw`# CloudNest AI Agent Integration Prompt
+
+You are an AI coding agent integrating CloudNest into a user's project. CloudNest is a multi-provider storage gateway with a React dashboard, an Express/Postgres backend, and the official npm SDK package @cloudnest/sdk.
+
+Primary hosted service:
+- Website: https://cloudnest.urmate.tech
+- SDK docs: https://cloudnest.urmate.tech/sdk
+- AI prompt: https://cloudnest.urmate.tech/ai-prompt
+- Agent text: https://cloudnest.urmate.tech/llms.txt
+- Markdown prompt: https://cloudnest.urmate.tech/ai-prompt.md
+- Public API base for SDK/API-key uploads: https://cloudnest.urmate.tech/api/v1
+
+Core concepts:
+- Users create API keys inside CloudNest.
+- API keys are secret. Never hardcode them in source code, screenshots, commits, logs, or client bundles.
+- Read API keys from environment variables such as CLOUDNEST_API_KEY.
+- Storage providers are S3, GOOGLE_DRIVE, and TELEGRAM.
+- Providers can be turned on or off by an admin. Do not assume S3 is enabled. If the user tells you Google Drive is enabled, pass provider: "GOOGLE_DRIVE".
+- Google Drive supports connected accounts, storage account selection, Drive folders, upload, preview, move, delete, and usage sync.
+- Telegram uses user-session storage and app-managed soft quota.
+- AWS S3 is an admin-shared provider when configured and enabled.
+
+Use the official SDK package only:
+
+\`\`\`bash
+npm install @cloudnest/sdk
+\`\`\`
+
+Node.js upload example:
+
+\`\`\`ts
+import { CloudNestClient } from "@cloudnest/sdk";
+
+const cloudnest = new CloudNestClient({
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
+  apiKey: process.env.CLOUDNEST_API_KEY!,
+});
+
+const result = await cloudnest.uploadFiles("./invoice.pdf", {
+  provider: "GOOGLE_DRIVE",
+});
+
+console.log(result.data);
+\`\`\`
+
+Browser or React example:
+
+\`\`\`ts
+import { CloudNestClient } from "@cloudnest/sdk";
+
+const cloudnest = new CloudNestClient({
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
+  apiKey: import.meta.env.VITE_CLOUDNEST_API_KEY,
+  isBrowser: true,
+});
+
+await cloudnest.uploadFiles(fileInput.files![0], {
+  provider: "GOOGLE_DRIVE",
+});
+\`\`\`
+
+Important browser security rule:
+- Do not expose privileged production API keys in public browser bundles.
+- For real apps, prefer uploading through your own backend route that reads CLOUDNEST_API_KEY server-side.
+
+Backend proxy upload example:
+
+\`\`\`ts
+import { CloudNestClient } from "@cloudnest/sdk";
+
+const cloudnest = new CloudNestClient({
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
+  apiKey: process.env.CLOUDNEST_API_KEY!,
+});
+
+export async function uploadToCloudNest(filePath: string) {
+  return cloudnest.uploadFiles(filePath, {
+    provider: "GOOGLE_DRIVE",
+  });
+}
+\`\`\`
+
+Direct REST fallback:
+
+\`\`\`ts
+const formData = new FormData();
+formData.append("files", file);
+formData.append("provider", "GOOGLE_DRIVE");
+
+const response = await fetch("https://cloudnest.urmate.tech/api/v1/files/upload", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + process.env.CLOUDNEST_API_KEY,
+  },
+  body: formData,
+});
+
+if (!response.ok) {
+  throw new Error("CloudNest upload failed: " + response.status);
+}
+
+const result = await response.json();
+\`\`\`
+
+Optional upload fields:
+- provider: "S3" | "GOOGLE_DRIVE" | "TELEGRAM"
+- storageAccountId: connected storage account id when the user wants a specific account
+- providerFolderId: provider-native folder id, especially Google Drive folder id
+
+Expected upload response shape:
+
+\`\`\`ts
+{
+  message: string;
+  data: Array<{
+    fileId: string;
+    originalName: string;
+    size: number;
+    ext: string;
+    mimeType: string;
+    provider?: "S3" | "GOOGLE_DRIVE" | "TELEGRAM";
+    storageAccountId?: string | null;
+    storageAccountName?: string | null;
+    folderId?: string | null;
+    folderName?: string | null;
+  }>;
+  failedCount?: number;
+}
+\`\`\`
+
+Implementation checklist for agents:
+1. Ask the user which provider they want if it is not clear.
+2. Install @cloudnest/sdk.
+3. Store the API key in an environment variable, not in code.
+4. Use apiUrl: "https://cloudnest.urmate.tech/api/v1".
+5. Use provider: "GOOGLE_DRIVE" when S3 is disabled or when Google Drive is desired.
+6. Handle upload errors and show clear messages for invalid API key, provider disabled, account not connected, file type not allowed, and quota exceeded.
+7. Never print full API keys, OAuth tokens, Telegram sessions, or provider secrets.
+8. Do not use package names like cloudnest-sdk. The official package is @cloudnest/sdk.
+
+Minimal test command:
+
+\`\`\`bash
+CLOUDNEST_API_KEY="sk_live_xxx" node upload-test.mjs
+\`\`\`
+
+Educational/safety note:
+CloudNest demonstrates multi-provider storage and admin workflows. Review security, provider policies, rate limits, secrets management, and privacy requirements before using it for sensitive production workloads.`;
+
 export const SDKPage = () => (
   <PageShell
     eyebrow="CloudNest SDK"
@@ -133,7 +284,7 @@ const result = await cloudnest.uploadFiles(file, {
   providerFolderId: "optional-google-drive-folder-id",
 });
 
-console.log(result.files[0].url);`}</CodeBlock>
+console.log(result.data[0].fileId);`}</CodeBlock>
         <CodeBlock>{`await cloudnest.uploadFiles(file, {
   provider: "S3", // S3 | GOOGLE_DRIVE | TELEGRAM
 });
@@ -144,6 +295,44 @@ await cloudnest.uploadFiles(file, {
   providerFolderId: "drive-folder-id",
 });`}</CodeBlock>
       </div>
+    </div>
+  </PageShell>
+);
+
+export const AIPromptPage = () => (
+  <PageShell
+    eyebrow="AI Agent Prompt"
+    title="Give any coding agent the full CloudNest integration context."
+    description="A public, copy-ready prompt for Claude, Codex, Cursor, Windsurf, and other agents that need to add CloudNest uploads to a project."
+  >
+    <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+      <div className="space-y-4">
+        {[
+          ["Public", "No login is required. Agents can read this page, /llms.txt, or /ai-prompt.md."],
+          ["SDK-first", "The prompt points agents to @cloudnest/sdk and the hosted API base URL."],
+          ["Provider-aware", "It explains S3, Google Drive, Telegram, storage accounts, and disabled providers."],
+          ["Secret-safe", "It tells agents to use environment variables and never commit API keys."],
+        ].map(([title, body]) => (
+          <div key={title} className="rounded-[8px] border border-white/10 bg-white/[0.035] p-5">
+            <Bot className="mb-4 size-5 text-red-200" />
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">{body}</p>
+          </div>
+        ))}
+        <div className="rounded-[8px] border border-white/10 bg-white/[0.035] p-5">
+          <h2 className="text-lg font-semibold">Agent-readable files</h2>
+          <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            <a className="text-red-200 underline" href="/llms.txt" target="_blank" rel="noreferrer">
+              /llms.txt
+            </a>
+            <a className="text-red-200 underline" href="/ai-prompt.md" target="_blank" rel="noreferrer">
+              /ai-prompt.md
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <CodeBlock>{aiAgentPrompt}</CodeBlock>
     </div>
   </PageShell>
 );

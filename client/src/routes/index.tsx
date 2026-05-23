@@ -8,6 +8,7 @@ import useAuthExpiration from "@/hooks/use-auth-expiration";
 import Landing from "@/pages/landing";
 import {
   AboutPage,
+  AIPromptPage,
   ContactPage,
   HelpPage,
   PrivacyPolicyPage,
@@ -24,6 +25,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path={PUBLIC_ROUTES.SDK} element={<SDKPage />} />
+        <Route path={PUBLIC_ROUTES.AI_PROMPT} element={<AIPromptPage />} />
         <Route path={PUBLIC_ROUTES.PRIVACY} element={<PrivacyPolicyPage />} />
         <Route path={PUBLIC_ROUTES.TERMS} element={<TermsPage />} />
         <Route path={PUBLIC_ROUTES.HELP} element={<HelpPage />} />

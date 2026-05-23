@@ -28,12 +28,14 @@ const navItems = [
   { label: "Platform", href: "#platform" },
   { label: "Providers", href: "#providers" },
   { label: "SDK", href: PUBLIC_ROUTES.SDK },
+  { label: "AI Prompt", href: PUBLIC_ROUTES.AI_PROMPT },
   { label: "Help", href: PUBLIC_ROUTES.HELP },
   { label: "GitHub", href: "https://github.com/xgauravyaduvanshii/cloudnest" },
 ];
 
 const footerLinks = [
   { label: "SDK", href: PUBLIC_ROUTES.SDK },
+  { label: "AI Prompt", href: PUBLIC_ROUTES.AI_PROMPT },
   { label: "Help", href: PUBLIC_ROUTES.HELP },
   { label: "Contact", href: PUBLIC_ROUTES.CONTACT },
   { label: "Privacy", href: PUBLIC_ROUTES.PRIVACY },
@@ -332,6 +334,13 @@ const Landing = () => {
               >
                 <KeyRound className="size-4 text-red-200" />
                 SDK guide
+              </Link>
+              <Link
+                to={PUBLIC_ROUTES.AI_PROMPT}
+                className="inline-flex items-center gap-2 rounded-[8px] border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
+              >
+                <Bot className="size-4 text-red-200" />
+                AI agent prompt
               </Link>
               <a
                 href="https://github.com/xgauravyaduvanshii/cloudnest"

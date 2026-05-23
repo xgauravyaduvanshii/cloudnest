@@ -10,6 +10,7 @@ export const AUTH_ROUTES = {
 export const PUBLIC_ROUTES = {
   HOME: "/",
   SDK: "/sdk",
+  AI_PROMPT: "/ai-prompt",
   PRIVACY: "/privacy-policy",
   TERMS: "/terms-and-conditions",
   HELP: "/help",

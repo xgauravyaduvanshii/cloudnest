@@ -24,7 +24,7 @@ const client = new CloudNestClient({
 
 // Upload files
 const result = await client.uploadFiles(files);
-console.log(result.files);
+console.log(result.data);
 ```
 
 ### Provider Uploads

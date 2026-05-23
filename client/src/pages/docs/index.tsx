@@ -119,7 +119,7 @@ const client = new CloudNestClient({
 
 // Upload files
 const result = await client.uploadFiles(files);
-console.log(result.files);`}
+console.log(result.data);`}
                 </SyntaxHighlighter>
               </div>
             </CardContent>
@@ -188,7 +188,7 @@ await client.uploadFiles(buffer);`}
 
 const client = new CloudNestClient({
   apiKey: "your-api-key",
-  forceBrowser: true,
+  isBrowser: true,
 });
 
 // From file input
@@ -203,7 +203,7 @@ function FileUpload() {
   const handleUpload = async (event) => {
     const files = event.target.files;
     const result = await client.uploadFiles(files[0]);
-    console.log('Uploaded:', result.files);
+    console.log('Uploaded:', result.data);
   };
 
   return <input type="file" onChange={handleUpload} />;
@@ -239,7 +239,7 @@ async function uploadAction(formData: FormData) {
 
   const client = new CloudNestClient({
     apiKey: process.env.CLOUDNEST_API_KEY!,
-    forceBrowser: true,
+    isBrowser: true,
   });
 
   const file = formData.get("file") as File;
@@ -274,7 +274,7 @@ async function uploadAction(formData: FormData) {
 
 try {
   const result = await client.uploadFiles(files);
-  console.log('Success:', result.files);
+  console.log('Success:', result.data);
 } catch (error) {
   if (error instanceof ValidationError) {
     console.log("Invalid file type:", error.message);
