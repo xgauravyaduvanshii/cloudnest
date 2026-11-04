@@ -24,6 +24,11 @@ jest.mock('../../models/activity.model', () => ({
   default: { record: jest.fn().mockResolvedValue(null) },
 }));
 
+jest.mock('../../models/ai-model.model', () => ({
+  __esModule: true,
+  default: { isEnabledForKind: jest.fn().mockResolvedValue(false) },
+}));
+
 jest.mock('../../providers/ai', () => {
   const actual = jest.requireActual('../../providers/ai/ai-provider');
   return {
@@ -54,7 +59,7 @@ beforeEach(() => {
 describe('planAssistantService', () => {
   it('returns no actions and never mutates when AI is disabled', async () => {
     (isAiConfigured as jest.Mock).mockReturnValue(false);
-    const plan = await planAssistantService('user-1', 'group my receipts');
+    const plan = await planAssistantService('user-1', { instruction: 'group my receipts' });
     expect(plan.actions).toEqual([]);
     expect(createCollectionService).not.toHaveBeenCalled();
     expect(addFilesToCollectionService).not.toHaveBeenCalled();
@@ -77,7 +82,7 @@ describe('planAssistantService', () => {
     (FileModel.findAllByUser as jest.Mock).mockResolvedValue([f('f1')]);
     (CollectionModel.findAllForUser as jest.Mock).mockResolvedValue([]);
 
-    const plan = await planAssistantService('user-1', 'group my receipts');
+    const plan = await planAssistantService('user-1', { instruction: 'group my receipts' });
 
     // Unsafe action dropped; invalid file id filtered out; nothing executed at plan time.
     expect(plan.actions.map((a) => a.type)).toEqual(['create_collection', 'add_to_collection']);

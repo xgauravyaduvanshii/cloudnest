@@ -19,9 +19,15 @@ import {
   fileIdSchema,
   searchSchema,
 } from '../validators/ai.validator';
+import { listEnabledChatModelsService } from '../services/admin-ai.service';
 
 export const aiStatusController = asyncHandler(async (_req: Request, res: Response) => {
-  return res.status(HTTPSTATUS.OK).json(getAiStatusService());
+  return res.status(HTTPSTATUS.OK).json(await getAiStatusService());
+});
+
+export const aiModelsController = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await listEnabledChatModelsService();
+  return res.status(HTTPSTATUS.OK).json(result);
 });
 
 export const enrichFileController = asyncHandler(async (req: Request, res: Response) => {
@@ -46,8 +52,8 @@ export const aiSearchController = asyncHandler(async (req: Request, res: Respons
 });
 
 export const assistantPlanController = asyncHandler(async (req: Request, res: Response) => {
-  const { instruction } = assistantPlanSchema.parse(req.body);
-  const plan = await planAssistantService(req.user?._id, instruction);
+  const payload = assistantPlanSchema.parse(req.body);
+  const plan = await planAssistantService(req.user?._id, payload);
   return res.status(HTTPSTATUS.OK).json(plan);
 });
 

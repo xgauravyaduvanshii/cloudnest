@@ -1,5 +1,9 @@
 import { apiClient } from "@/app/api-client";
 import {
+  AdminAiModelsFetchResponse,
+  AdminAiModelsResponse,
+  AdminAiSettingsResponse,
+  AdminAiSettingsUpdatePayload,
   AdminApiKeysResponse,
   AdminDashboardResponse,
   AdminFilesResponse,
@@ -142,6 +146,40 @@ export const adminApi = apiClient.injectEndpoints({
       }),
       invalidatesTags: ["admin"],
     }),
+    getAdminAiSettings: builder.query<AdminAiSettingsResponse, void>({
+      query: () => ({ url: "/admin/ai-settings", method: "GET" }),
+      providesTags: ["admin"],
+    }),
+    updateAdminAiSettings: builder.mutation<
+      AdminAiSettingsResponse,
+      AdminAiSettingsUpdatePayload
+    >({
+      query: (body) => ({ url: "/admin/ai-settings", method: "PUT", body }),
+      invalidatesTags: ["admin", "ai"],
+    }),
+    fetchAdminAiModels: builder.mutation<AdminAiModelsFetchResponse, void>({
+      query: () => ({ url: "/admin/ai-settings/fetch-models", method: "POST" }),
+      invalidatesTags: ["admin"],
+    }),
+    getAdminAiModels: builder.query<AdminAiModelsResponse, void>({
+      query: () => ({ url: "/admin/ai-models", method: "GET" }),
+      providesTags: ["admin"],
+    }),
+    setAdminAiModelEnabled: builder.mutation<
+      { message: string },
+      { id: string; isEnabled: boolean }
+    >({
+      query: ({ id, isEnabled }) => ({
+        url: `/admin/ai-models/${id}`,
+        method: "PATCH",
+        body: { isEnabled },
+      }),
+      invalidatesTags: ["admin", "ai"],
+    }),
+    deleteAdminAiModel: builder.mutation<{ message: string }, string>({
+      query: (id) => ({ url: `/admin/ai-models/${id}`, method: "DELETE" }),
+      invalidatesTags: ["admin", "ai"],
+    }),
   }),
 });
 
@@ -162,4 +200,10 @@ export const {
   useDeleteAdminApiKeyMutation,
   useGetAdminProviderSettingsQuery,
   useUpdateAdminProviderSettingsMutation,
+  useGetAdminAiSettingsQuery,
+  useUpdateAdminAiSettingsMutation,
+  useFetchAdminAiModelsMutation,
+  useGetAdminAiModelsQuery,
+  useSetAdminAiModelEnabledMutation,
+  useDeleteAdminAiModelMutation,
 } = adminApi;

@@ -1,4 +1,5 @@
 import PageLayout from "@/components/page-layout";
+import AiSettingsSection from "./_component/ai-settings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -282,6 +283,7 @@ const Admin = () => {
           <TabsTrigger value="storage">Storage</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="ai">AI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -704,6 +706,10 @@ const Admin = () => {
               onSave={() => saveProvider("TELEGRAM")}
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <AiSettingsSection />
         </TabsContent>
       </Tabs>
     </PageLayout>

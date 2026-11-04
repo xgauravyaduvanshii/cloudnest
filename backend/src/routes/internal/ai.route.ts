@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   aiSearchController,
   aiStatusController,
+  aiModelsController,
   assistantApplyController,
   assistantPlanController,
   chatController,
@@ -15,6 +16,7 @@ import {
 const aiRoutes = Router();
 
 aiRoutes.get('/status', aiStatusController);
+aiRoutes.get('/models', aiModelsController);
 aiRoutes.get('/search', aiSearchController);
 aiRoutes.post('/enrich', enrichFileController);
 aiRoutes.get('/files/:fileId/metadata', getFileMetadataController);

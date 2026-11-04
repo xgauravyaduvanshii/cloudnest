@@ -1,9 +1,19 @@
 import AiConversationModel, { AiCitation } from '../models/ai-conversation.model';
 import AiMetadataModel from '../models/ai-metadata.model';
+import AiModelModel from '../models/ai-model.model';
 import FileModel from '../models/file.model';
-import { getAiProvider, isAiConfigured } from '../providers/ai';
+import {
+  getAiProvider,
+  isAiConfigured,
+  splitReasoning,
+  CHAIN_OF_THOUGHT_INSTRUCTION,
+} from '../providers/ai';
 import type { AiChatMessage } from '../providers/ai/ai-provider';
-import { NotFoundException, UnauthorizedException } from '../utils/app-error';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '../utils/app-error';
 import { smartSearchService } from './ai-search.service';
 
 const MAX_CONTEXT_FILES = 5;
@@ -35,22 +45,37 @@ export const deleteConversationService = async (userId: string | undefined, conv
  */
 export const askChatService = async (
   userId: string | undefined,
-  input: { message: string; conversationId?: string; fileIds?: string[] },
+  input: {
+    message: string;
+    conversationId?: string;
+    fileIds?: string[];
+    folderId?: string;
+    model?: string;
+  },
 ) => {
   if (!userId) throw new UnauthorizedException('Unauthorized access');
   const message = (input.message || '').trim();
   if (!message) throw new UnauthorizedException('Message is required');
 
-  if (!isAiConfigured()) {
+  if (!(await isAiConfigured())) {
     return {
       disabled: true,
       answer: 'AI is not configured on this server, so document chat is unavailable.',
       citations: [] as AiCitation[],
+      reasoning: null as string | null,
       conversationId: input.conversationId ?? null,
     };
   }
 
-  const provider = getAiProvider();
+  const provider = await getAiProvider();
+
+  // Only accept a model the admin has explicitly enabled (no catalog rows => use provider default).
+  let selectedModel: string | undefined;
+  if (input.model) {
+    const enabled = await AiModelModel.isEnabledForKind(input.model, 'chat');
+    if (!enabled) throw new BadRequestException('Selected model is not available');
+    selectedModel = input.model;
+  }
 
   // Resolve or create the conversation.
   let conversation = input.conversationId
@@ -61,14 +86,25 @@ export const askChatService = async (
     conversation = await AiConversationModel.create(userId, message.slice(0, 80));
   }
 
-  // Retrieve context files (explicit selection, otherwise a smart-search of the question).
-  let contextFileIds: string[] = [];
-  if (input.fileIds?.length) {
-    const owned = await FileModel.findByIdsForUser(input.fileIds, userId);
-    contextFileIds = owned.map((f) => f._id);
-  } else {
+  // Retrieve context files: explicit selection and/or a mentioned folder, otherwise
+  // a smart-search of the question.
+  const explicitIds = new Set<string>(input.fileIds ?? []);
+  if (input.folderId) {
+    const folderFiles = await FileModel.findAllByUser(
+      userId,
+      undefined,
+      { limit: MAX_CONTEXT_FILES, offset: 0 },
+      input.folderId,
+    );
+    for (const f of folderFiles) explicitIds.add(f._id);
+  }
+
+  let contextFileIds: string[] = [...explicitIds];
+  if (!contextFileIds.length) {
     const search = await smartSearchService(userId, message, MAX_CONTEXT_FILES);
     contextFileIds = search.results.slice(0, MAX_CONTEXT_FILES).map((r) => r.file._id);
+  } else {
+    contextFileIds = contextFileIds.slice(0, MAX_CONTEXT_FILES);
   }
 
   const contextFiles = contextFileIds.length
@@ -97,29 +133,34 @@ export const askChatService = async (
       role: 'system',
       content:
         'You answer questions using ONLY the provided file excerpts from the user\'s cloud storage. ' +
-        'Cite files by name. If the answer is not supported by the excerpts, say so. Be concise.\n\n' +
+        'Cite files by name. If the answer is not supported by the excerpts, say so. Be concise.\n' +
+        CHAIN_OF_THOUGHT_INSTRUCTION +
+        '\n\n' +
         (contextBlocks.length ? contextBlocks.join('\n\n') : 'No files were retrieved for this question.'),
     },
     ...historyMessages,
     { role: 'user', content: message },
   ];
 
-  const chat = await provider.chat({ messages: chatMessages, maxTokens: 800 });
+  const chat = await provider.chat({ messages: chatMessages, maxTokens: 800, model: selectedModel });
+  const { reasoning, answer } = splitReasoning(chat.text);
 
   await AiConversationModel.addMessage({ conversationId: conversation._id, role: 'user', content: message });
   await AiConversationModel.addMessage({
     conversationId: conversation._id,
     role: 'assistant',
-    content: chat.text,
+    content: answer,
     citations,
+    reasoning,
   });
   await AiConversationModel.touch(conversation._id);
 
   return {
     disabled: false,
     conversationId: conversation._id,
-    answer: chat.text,
+    answer,
     citations,
+    reasoning,
     model: chat.model,
   };
 };

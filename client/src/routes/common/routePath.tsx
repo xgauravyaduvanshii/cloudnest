@@ -18,6 +18,7 @@ export const PUBLIC_ROUTES = {
   SECURITY: "/security",
   ABOUT: "/about",
   SHARE: "/share/:token",
+  DOCS: "/docs",
 };
 
 export const PROTECTED_ROUTES = {
@@ -29,6 +30,5 @@ export const PROTECTED_ROUTES = {
   ACTIVITY: "/activity",
   STORAGE_ACCOUNTS: "/storage-accounts",
   ADMIN: "/admin",
-  DOCS: "/docs",
   SETTINGS: "/settings",
 };

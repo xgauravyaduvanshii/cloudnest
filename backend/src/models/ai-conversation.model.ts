@@ -20,6 +20,7 @@ interface MessageRow extends QueryResultRow {
   role: 'user' | 'assistant' | 'system';
   content: string;
   citations: AiCitation[] | null;
+  reasoning: string | null;
   created_at: Date;
 }
 
@@ -39,6 +40,7 @@ export interface AiMessageDocument {
   role: 'user' | 'assistant' | 'system';
   content: string;
   citations: AiCitation[];
+  reasoning: string | null;
   createdAt: Date;
 }
 
@@ -58,6 +60,7 @@ const toMessage = (row: MessageRow): AiMessageDocument => ({
   role: row.role,
   content: row.content,
   citations: Array.isArray(row.citations) ? row.citations : [],
+  reasoning: row.reasoning ?? null,
   createdAt: row.created_at,
 });
 
@@ -105,16 +108,18 @@ const AiConversationModel = {
     role: 'user' | 'assistant' | 'system';
     content: string;
     citations?: AiCitation[];
+    reasoning?: string | null;
   }) {
     const result = await query<MessageRow>(
-      `INSERT INTO ai_messages (conversation_id, role, content, citations)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO ai_messages (conversation_id, role, content, citations, reasoning)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [
         data.conversationId,
         data.role,
         data.content,
         JSON.stringify(data.citations ?? []),
+        data.reasoning ?? null,
       ],
     );
     return toMessage(result.rows[0]);

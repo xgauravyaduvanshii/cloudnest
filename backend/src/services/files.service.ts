@@ -648,13 +648,13 @@ export const listGoogleDriveItemsService = async (
     files: result.files.map((item) =>
       toGoogleDriveFile(item, user._id, account.id, account.displayName),
     ),
+    // Drive is token-paged and has no cheap total count, so expose the continuation
+    // token and a hasMore flag rather than misleading total/page numbers.
     pagination: {
       pageSize: input.pageSize || 100,
-      pageNumber: 1,
-      totalCount: result.folders.length + result.files.length,
-      totalPages: result.nextPageToken ? 2 : 1,
-      skip: 0,
+      hasMore: !!result.nextPageToken,
       nextPageToken: result.nextPageToken || null,
+      pageToken: input.pageToken || null,
     },
   };
 };

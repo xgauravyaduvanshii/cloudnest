@@ -22,7 +22,7 @@ import {
   useMoveGoogleDriveItemMutation,
 } from "@/features/files/filesAPI";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, FolderPlus, Home, UploadCloud } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderPlus, Home, UploadCloud } from "lucide-react";
 import { FileUploaderDialog } from "@/pages/files/_component/fileuploader-dialog";
 import { CreateFolderDialog } from "@/pages/files/_component/create-folder-dialog";
 import { MoveItemDialog, MovingItem } from "@/pages/files/_component/move-item-dialog";
@@ -69,6 +69,12 @@ const UploadFileLayout = (props: Props) => {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [driveFolderId, setDriveFolderId] = useState<string | null>(null);
   const [driveBreadcrumbs, setDriveBreadcrumbs] = useState<FolderType[]>([]);
+  // Drive pages by continuation token, not offset. Store the token requested for
+  // each visited page so Previous/Next replay them; index 0 is always the first page.
+  const [drivePageTokens, setDrivePageTokens] = useState<(string | undefined)[]>([
+    undefined,
+  ]);
+  const [drivePageIndex, setDrivePageIndex] = useState(0);
   const [previewFile, setPreviewFile] = useState<FileType | null>(null);
   const [activeProvider, setActiveProvider] = useState<StorageProvider>("S3");
   const [selectedGoogleAccountId, setSelectedGoogleAccountId] = useState<
@@ -159,6 +165,7 @@ const UploadFileLayout = (props: Props) => {
       folderId: driveFolderId,
       keyword: debouncedTerm,
       pageSize: filter.pageSize,
+      pageToken: drivePageTokens[drivePageIndex],
     },
     {
       skip:
@@ -168,16 +175,35 @@ const UploadFileLayout = (props: Props) => {
     }
   );
 
+  // Reset Drive paging whenever the browsed location or page size changes.
+  useEffect(() => {
+    setDrivePageTokens([undefined]);
+    setDrivePageIndex(0);
+  }, [driveFolderId, selectedGoogleAccountId, debouncedTerm, filter.pageSize]);
+
+  const driveHasMore = !!googleDriveData?.pagination.hasMore;
+  const driveNext = () => {
+    const token = googleDriveData?.pagination.nextPageToken;
+    if (!token) return;
+    setDrivePageTokens((prev) =>
+      drivePageIndex + 1 >= prev.length ? [...prev, token] : prev,
+    );
+    setDrivePageIndex((prev) => prev + 1);
+  };
+  const drivePrev = () =>
+    setDrivePageIndex((prev) => Math.max(0, prev - 1));
+
   const sourceData = isGoogleDriveLive ? googleDriveData : data;
   const fileData = sourceData?.files || [];
   const folderData = sourceData?.folders || [];
   const breadcrumbs = isGoogleDriveLive
     ? driveBreadcrumbs
-    : sourceData?.breadcrumbs || [];
+    : data?.breadcrumbs || [];
 
+  // Numeric (offset) pagination only applies to S3; Drive uses token Previous/Next.
   const pagination = {
-    totalCount: sourceData?.pagination.totalCount || 0,
-    totalPages: sourceData?.pagination.totalPages || 0,
+    totalCount: data?.pagination.totalCount || 0,
+    totalPages: data?.pagination.totalPages || 0,
     pageNumber: filter.pageNumber,
     pageSize: filter.pageSize,
   };
@@ -571,7 +597,7 @@ const UploadFileLayout = (props: Props) => {
             onDeleteFile={handleDeleteFile}
             onMoveFolder={openMoveFolder}
             onDeleteFolder={handleDeleteFolder}
-            isShowPagination={isShowPagination}
+            isShowPagination={isShowPagination && !isGoogleDriveLive}
             pagination={pagination}
             setPagination={setFilter}
           />
@@ -591,6 +617,35 @@ const UploadFileLayout = (props: Props) => {
           />
         )}
       </div>
+      {isGoogleDriveLive && isShowPagination && (
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">
+            Page {drivePageIndex + 1}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={drivePageIndex === 0 || isGoogleDriveFetching}
+              onClick={drivePrev}
+            >
+              <ChevronLeft className="size-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={!driveHasMore || isGoogleDriveFetching}
+              onClick={driveNext}
+            >
+              Next
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
       <MoveItemDialog
         item={movingItem}
         open={!!movingItem}

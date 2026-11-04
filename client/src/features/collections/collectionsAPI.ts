@@ -62,6 +62,7 @@ export const collectionsApi = apiClient.injectEndpoints({
 export const {
   useListCollectionsQuery,
   useGetCollectionQuery,
+  useLazyGetCollectionQuery,
   useCreateCollectionMutation,
   useUpdateCollectionMutation,
   useDeleteCollectionMutation,

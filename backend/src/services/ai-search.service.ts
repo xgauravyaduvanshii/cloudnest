@@ -29,8 +29,9 @@ export const smartSearchService = async (
 ) => {
   if (!userId) throw new UnauthorizedException('Unauthorized access');
 
+  const aiEnabled = await isAiConfigured();
   const trimmed = (query || '').trim();
-  if (!trimmed) return { query: trimmed, results: [] as ScoredResult[], aiEnabled: isAiConfigured() };
+  if (!trimmed) return { query: trimmed, results: [] as ScoredResult[], aiEnabled };
 
   const scores = new Map<string, { doc: FileDocument; score: number; match: ScoredResult['match']; aiId?: string }>();
 
@@ -56,9 +57,9 @@ export const smartSearchService = async (
   }
 
   // 3. Semantic ranking.
-  if (isAiConfigured()) {
+  if (aiEnabled) {
     try {
-      const provider = getAiProvider();
+      const provider = await getAiProvider();
       const [queryVec] = await provider.embed([trimmed]);
       if (queryVec && queryVec.length) {
         const withEmbeddings = await AiMetadataModel.findWithEmbeddings(userId);
@@ -95,7 +96,7 @@ export const smartSearchService = async (
 
   return {
     query: trimmed,
-    aiEnabled: isAiConfigured(),
+    aiEnabled,
     results: enriched.map((r) => ({
       file: toPublicFile(r.file),
       score: r.score,

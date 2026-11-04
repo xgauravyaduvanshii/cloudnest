@@ -59,8 +59,8 @@ const buildEmbeddingInput = (file: FileDocument, meta: EnrichmentModelOutput) =>
     .join('\n')
     .slice(0, MAX_TEXT_CHARS);
 
-export const getAiStatusService = () => {
-  const provider = getAiProvider();
+export const getAiStatusService = async () => {
+  const provider = await getAiProvider();
   return {
     enabled: provider.isConfigured(),
     provider: provider.id,
@@ -76,11 +76,11 @@ export const enrichFileService = async (userId: string | undefined, fileId: stri
   const [file] = await FileModel.findByIdsForUser([fileId], userId);
   if (!file) throw new NotFoundException('File not found');
 
-  if (!isAiConfigured()) {
+  if (!(await isAiConfigured())) {
     return { disabled: true, file: await AiMetadataModel.findByFileId(fileId) };
   }
 
-  const provider = getAiProvider();
+  const provider = await getAiProvider();
   const mediaType = mediaTypeOf(file.mimeType);
 
   let extractedText: string | null = null;

@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { Sparkles, Search, Wand2, MessageSquare, Send, Plus, Loader2, ShieldCheck } from "lucide-react";
+import {
+  Sparkles,
+  Search,
+  Wand2,
+  MessageSquare,
+  Plus,
+  Loader2,
+  ShieldCheck,
+  Brain,
+  ChevronDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -19,22 +28,31 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useAiStatusQuery,
+  useAiModelsQuery,
   useLazyAiSearchQuery,
   useAssistantPlanMutation,
   useAssistantApplyMutation,
   useChatMutation,
 } from "@/features/ai/aiAPI";
-import type { AssistantAction, SearchResultItem, AiCitation } from "@/features/ai/aiType";
+import type {
+  AssistantAction,
+  SearchResultItem,
+  AiCitation,
+  AiModelOption,
+} from "@/features/ai/aiType";
+import PromptComposer from "./prompt-composer";
 
 const AiPanel = () => {
   const [open, setOpen] = useState(false);
   const { data: status } = useAiStatusQuery(undefined, { skip: !open });
+  const { data: modelsData } = useAiModelsQuery(undefined, { skip: !open });
+  const models: AiModelOption[] = modelsData?.models || [];
 
   return (
     <>
       <Button
         size="lg"
-        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg"
+        className="fixed bottom-20 right-4 z-40 h-12 w-12 rounded-full shadow-lg"
         onClick={() => setOpen(true)}
         aria-label="Open AI assistant"
       >
@@ -87,10 +105,10 @@ const AiPanel = () => {
               <SearchTab />
             </TabsContent>
             <TabsContent value="assistant" className="mt-0 flex-1 overflow-y-auto p-4">
-              <AssistantTab aiEnabled={!!status?.enabled} />
+              <AssistantTab aiEnabled={!!status?.enabled} models={models} />
             </TabsContent>
             <TabsContent value="chat" className="mt-0 flex-1 overflow-y-auto p-4">
-              <ChatTab aiEnabled={!!status?.enabled} />
+              <ChatTab aiEnabled={!!status?.enabled} models={models} />
             </TabsContent>
           </Tabs>
         </SheetContent>
@@ -172,22 +190,69 @@ const SearchTab = () => {
   );
 };
 
-const AssistantTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
-  const [instruction, setInstruction] = useState("");
+const Thinking = ({
+  reasoning,
+  steps,
+}: {
+  reasoning?: string | null;
+  steps?: string[];
+}) => {
+  const [open, setOpen] = useState(false);
+  const lines = steps?.length ? steps : reasoning ? [reasoning] : [];
+  if (!lines.length) return null;
+  return (
+    <div className="rounded-md border bg-muted/40">
+      <button
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-muted-foreground"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <Brain className="h-3.5 w-3.5" />
+        Thinking
+        <ChevronDown
+          className={"h-3.5 w-3.5 transition-transform " + (open ? "rotate-180" : "")}
+        />
+      </button>
+      {open && (
+        <ol className="list-decimal space-y-1 px-6 pb-2 text-xs text-muted-foreground">
+          {lines.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+};
+
+const AssistantTab = ({
+  aiEnabled,
+  models,
+}: {
+  aiEnabled: boolean;
+  models: AiModelOption[];
+}) => {
   const [plan, setPlan] = useState<AssistantAction[]>([]);
+  const [reasoning, setReasoning] = useState<string[]>([]);
   const [rationale, setRationale] = useState<string | null>(null);
   const [planning, setPlanning] = useState(false);
   const [applying, setApplying] = useState(false);
   const [assistantPlan] = useAssistantPlanMutation();
   const [assistantApply] = useAssistantApplyMutation();
 
-  const makePlan = async () => {
-    if (!instruction.trim()) return;
+  const makePlan = async (payload: { text: string; fileIds: string[]; folderId?: string; model?: string }) => {
+    if (!payload.text.trim()) return;
     setPlanning(true);
     setPlan([]);
+    setReasoning([]);
+    setRationale(null);
     try {
-      const res = await assistantPlan({ instruction: instruction.trim() }).unwrap();
+      const res = await assistantPlan({
+        instruction: payload.text.trim(),
+        model: payload.model,
+        fileIds: payload.fileIds.length ? payload.fileIds : undefined,
+        folderId: payload.folderId,
+      }).unwrap();
       setPlan(res.actions);
+      setReasoning(res.reasoning ?? []);
       setRationale(res.rationale ?? null);
       if (!res.actions.length) toast.info("No safe actions proposed");
     } catch {
@@ -203,8 +268,8 @@ const AssistantTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
       const res = await assistantApply({ actions: plan }).unwrap();
       toast.success(`Applied ${res.applied} action(s), skipped ${res.skipped}`);
       setPlan([]);
+      setReasoning([]);
       setRationale(null);
-      setInstruction("");
     } catch {
       toast.error("Failed to apply plan");
     } finally {
@@ -219,18 +284,16 @@ const AssistantTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
           The assistant needs AI enabled on the server.
         </p>
       )}
-      <Textarea
-        value={instruction}
-        onChange={(e) => setInstruction(e.target.value)}
+      <PromptComposer
+        aiEnabled={aiEnabled}
+        models={models}
+        loading={planning}
         placeholder="e.g. Group my invoices and receipts into a Finances collection"
-        className="min-h-[80px]"
-        disabled={!aiEnabled}
+        submitLabel="Preview plan"
+        onSubmit={makePlan}
       />
-      <Button onClick={makePlan} disabled={!aiEnabled || planning || !instruction.trim()}>
-        {planning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-        <span className="ml-2">Preview plan</span>
-      </Button>
 
+      <Thinking steps={reasoning} />
       {rationale && <p className="text-xs text-muted-foreground">{rationale}</p>}
 
       {plan.length > 0 && (
@@ -268,27 +331,43 @@ type ChatTurn = {
   role: "user" | "assistant";
   content: string;
   citations?: AiCitation[];
+  reasoning?: string | null;
 };
 
-const ChatTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
+const ChatTab = ({
+  aiEnabled,
+  models,
+}: {
+  aiEnabled: boolean;
+  models: AiModelOption[];
+}) => {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
-  const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [sending, setSending] = useState(false);
   const [chat] = useChatMutation();
 
-  const send = async () => {
-    const message = input.trim();
+  const send = async (payload: { text: string; fileIds: string[]; folderId?: string; model?: string }) => {
+    const message = payload.text.trim();
     if (!message) return;
     setTurns((t) => [...t, { role: "user", content: message }]);
-    setInput("");
     setSending(true);
     try {
-      const res = await chat({ message, conversationId }).unwrap();
+      const res = await chat({
+        message,
+        conversationId,
+        model: payload.model,
+        fileIds: payload.fileIds.length ? payload.fileIds : undefined,
+        folderId: payload.folderId,
+      }).unwrap();
       if (res.conversationId) setConversationId(res.conversationId);
       setTurns((t) => [
         ...t,
-        { role: "assistant", content: res.answer, citations: res.citations },
+        {
+          role: "assistant",
+          content: res.answer,
+          citations: res.citations,
+          reasoning: res.reasoning,
+        },
       ]);
     } catch {
       toast.error("Chat request failed");
@@ -307,9 +386,10 @@ const ChatTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
         )}
         {turns.map((turn, i) => (
           <div key={i} className={turn.role === "user" ? "text-right" : ""}>
+            {turn.role === "assistant" && <Thinking reasoning={turn.reasoning} />}
             <div
               className={
-                "inline-block max-w-[90%] rounded-lg border p-2 text-sm whitespace-pre-wrap " +
+                "inline-block mt-1 max-w-[90%] rounded-lg border p-2 text-sm whitespace-pre-wrap " +
                 (turn.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")
               }
             >
@@ -329,18 +409,15 @@ const ChatTab = ({ aiEnabled }: { aiEnabled: boolean }) => {
         {sending && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-          placeholder={aiEnabled ? "Ask about your files…" : "AI chat is disabled"}
-          disabled={!aiEnabled || sending}
-        />
-        <Button onClick={send} disabled={!aiEnabled || sending || !input.trim()}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+      <PromptComposer
+        aiEnabled={aiEnabled}
+        models={models}
+        loading={sending}
+        multiline={false}
+        placeholder={aiEnabled ? "Ask about your files… (@ to add context)" : "AI chat is disabled"}
+        submitLabel="Send"
+        onSubmit={send}
+      />
     </div>
   );
 };

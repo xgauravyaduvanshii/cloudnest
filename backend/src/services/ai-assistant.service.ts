@@ -1,8 +1,13 @@
 import CollectionModel from '../models/collection.model';
 import FileModel from '../models/file.model';
 import ActivityModel from '../models/activity.model';
-import { getAiProvider, isAiConfigured, parseJsonObject } from '../providers/ai';
-import { UnauthorizedException } from '../utils/app-error';
+import AiModelModel from '../models/ai-model.model';
+import {
+  getAiProvider,
+  isAiConfigured,
+  parseJsonObject,
+} from '../providers/ai';
+import { BadRequestException, UnauthorizedException } from '../utils/app-error';
 import { addFilesToCollectionService, createCollectionService } from './collections.service';
 
 /**
@@ -18,29 +23,58 @@ export type AssistantAction =
 interface AssistantPlanOutput {
   actions?: AssistantAction[];
   rationale?: string;
+  reasoning?: string[];
 }
 
 const MAX_FILES_IN_CONTEXT = 120;
 const VALID_ACTION_TYPES = new Set(['create_collection', 'add_to_collection']);
 
 /** Produces a preview plan. NEVER mutates data. */
-export const planAssistantService = async (userId: string | undefined, instruction: string) => {
+export const planAssistantService = async (
+  userId: string | undefined,
+  input: { instruction: string; model?: string; fileIds?: string[]; folderId?: string },
+) => {
   if (!userId) throw new UnauthorizedException('Unauthorized access');
-  const provider = getAiProvider();
+  const instruction = (input.instruction || '').trim();
+  if (!instruction) throw new UnauthorizedException('Instruction is required');
+  const provider = await getAiProvider();
 
-  if (!isAiConfigured()) {
+  if (!(await isAiConfigured())) {
     return {
       aiEnabled: false,
       requiresConfirmation: true,
       actions: [] as AssistantAction[],
+      reasoning: [] as string[],
       message: 'AI assistant is disabled. Configure AI to generate plans.',
     };
   }
 
-  const files = await FileModel.findAllByUser(userId, undefined, {
-    limit: MAX_FILES_IN_CONTEXT,
-    offset: 0,
-  });
+  // Only accept a model the admin has explicitly enabled.
+  let selectedModel: string | undefined;
+  if (input.model) {
+    const enabled = await AiModelModel.isEnabledForKind(input.model, 'chat');
+    if (!enabled) throw new BadRequestException('Selected model is not available');
+    selectedModel = input.model;
+  }
+
+  // Scope the file context to an explicit selection / mentioned folder when given,
+  // otherwise the user's files.
+  let files;
+  if (input.fileIds?.length) {
+    files = await FileModel.findByIdsForUser(input.fileIds, userId);
+  } else if (input.folderId) {
+    files = await FileModel.findAllByUser(
+      userId,
+      undefined,
+      { limit: MAX_FILES_IN_CONTEXT, offset: 0 },
+      input.folderId,
+    );
+  } else {
+    files = await FileModel.findAllByUser(userId, undefined, {
+      limit: MAX_FILES_IN_CONTEXT,
+      offset: 0,
+    });
+  }
 
   const fileContext = files.map((f) => ({
     id: f._id,
@@ -51,6 +85,7 @@ export const planAssistantService = async (userId: string | undefined, instructi
   const chat = await provider.chat({
     json: true,
     maxTokens: 900,
+    model: selectedModel,
     messages: [
       {
         role: 'system',
@@ -60,7 +95,8 @@ export const planAssistantService = async (userId: string | undefined, instructi
           '  {"type":"create_collection","name":"...","description":"..."}\n' +
           '  {"type":"add_to_collection","collection":"<collection name>","fileIds":["<file id>",...]}\n' +
           'Never propose delete, rename, move, or any other action. Every fileIds entry MUST be an id from ' +
-          'the provided list. Respond with strict JSON: {"actions":[...],"rationale":"..."}',
+          'the provided list. First list 2-5 short plan steps in a "reasoning" array, then respond with ' +
+          'strict JSON: {"reasoning":["..."],"actions":[...],"rationale":"..."}',
       },
       {
         role: 'user',
@@ -74,12 +110,17 @@ export const planAssistantService = async (userId: string | undefined, instructi
   const knownNames = new Set((await CollectionModel.findAllForUser(userId)).map((c) => c.name.toLowerCase()));
 
   const actions = sanitizeActions(parsed.actions ?? [], validIds, knownNames);
+  const reasoning = Array.isArray(parsed.reasoning)
+    ? parsed.reasoning.map((s) => String(s)).filter(Boolean).slice(0, 8)
+    : [];
 
   return {
     aiEnabled: true,
     requiresConfirmation: true,
     rationale: parsed.rationale ?? null,
+    reasoning,
     actions,
+    model: chat.model,
   };
 };
 

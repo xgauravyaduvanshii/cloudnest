@@ -12,6 +12,9 @@ export const searchSchema = z.object({
 
 export const assistantPlanSchema = z.object({
   instruction: z.string().trim().min(3).max(2000),
+  model: z.string().trim().min(1).max(255).optional(),
+  fileIds: uuidList.optional(),
+  folderId: z.string().uuid().optional(),
 });
 
 const createCollectionAction = z.object({
@@ -34,6 +37,8 @@ export const chatSchema = z.object({
   message: z.string().trim().min(1).max(4000),
   conversationId: z.string().uuid().optional(),
   fileIds: uuidList.optional(),
+  folderId: z.string().uuid().optional(),
+  model: z.string().trim().min(1).max(255).optional(),
 });
 
 export const conversationIdSchema = z.string().uuid('Invalid conversation ID');

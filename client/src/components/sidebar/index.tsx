@@ -1,4 +1,4 @@
-import { PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { PROTECTED_ROUTES, PUBLIC_ROUTES } from "@/routes/common/routePath";
 import { NavLink, useLocation } from "react-router-dom";
 import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, Shield, Settings, Webhook } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ const SideBar = () => {
     },
     {
       icon: HelpCircle,
-      href: PROTECTED_ROUTES.DOCS,
+      href: PUBLIC_ROUTES.DOCS,
       label: "Docs",
     },
     {

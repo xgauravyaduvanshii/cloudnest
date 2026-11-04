@@ -6,7 +6,6 @@ import SignUp from "@/pages/auth/sign-up";
 import Files from "@/pages/files";
 import Overview from "@/pages/overview";
 import Settings from "@/pages/settings";
-import Docs from "@/pages/docs";
 import StorageAccounts from "@/pages/storage-accounts";
 import Admin from "@/pages/admin";
 import Collections from "@/pages/collections";
@@ -26,7 +25,6 @@ export const protectedRoutePaths = [
   { path: PROTECTED_ROUTES.APIKEYS, element: <ApiKeys /> },
   { path: PROTECTED_ROUTES.WEBHOOKS, element: <WebhooksPage /> },
   { path: PROTECTED_ROUTES.ADMIN, element: <Admin /> },
-  { path: PROTECTED_ROUTES.DOCS, element: <Docs /> },
   {
     path: PROTECTED_ROUTES.SETTINGS,
     element: <Settings />,

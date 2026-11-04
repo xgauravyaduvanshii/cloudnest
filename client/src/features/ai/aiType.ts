@@ -53,7 +53,9 @@ export interface AssistantPlanResponse {
   aiEnabled: boolean;
   requiresConfirmation: boolean;
   rationale?: string | null;
+  reasoning?: string[];
   actions: AssistantAction[];
+  model?: string;
   message?: string;
 }
 
@@ -79,6 +81,7 @@ export interface ChatResponse {
   conversationId: string | null;
   answer: string;
   citations: AiCitation[];
+  reasoning?: string | null;
   model?: string;
 }
 
@@ -95,6 +98,7 @@ export interface AiMessage {
   role: "user" | "assistant" | "system";
   content: string;
   citations: AiCitation[];
+  reasoning?: string | null;
   createdAt: string;
 }
 
@@ -105,4 +109,29 @@ export interface ListConversationsResponse {
 export interface ConversationMessagesResponse {
   conversation: AiConversation;
   messages: AiMessage[];
+}
+
+/** A model the admin has enabled, shown in the assistant/chat model dropdown. */
+export interface AiModelOption {
+  id: string;
+  name: string;
+}
+
+export interface AiModelsResponse {
+  models: AiModelOption[];
+}
+
+export interface ChatRequestBody {
+  message: string;
+  conversationId?: string;
+  fileIds?: string[];
+  folderId?: string;
+  model?: string;
+}
+
+export interface AssistantPlanRequestBody {
+  instruction: string;
+  model?: string;
+  fileIds?: string[];
+  folderId?: string;
 }

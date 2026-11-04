@@ -4,11 +4,17 @@ import {
   adminCreateApiKeyController,
   adminDashboardController,
   adminDeleteApiKeyController,
+  adminDeleteAiModelController,
   adminDeleteFilesController,
   adminDisconnectStorageAccountController,
   adminDownloadFilesController,
+  adminFetchAiModelsController,
   adminFilesController,
   adminProviderSettingsController,
+  adminAiModelsController,
+  adminAiSettingsController,
+  adminSetAiModelEnabledController,
+  adminUpdateAiSettingsController,
   adminRemoveStorageAccountController,
   adminStorageAccountsController,
   adminSyncStorageAccountController,
@@ -49,5 +55,12 @@ adminRoutes.put(
   '/provider-settings/:provider',
   adminUpdateProviderSettingsController,
 );
+
+adminRoutes.get('/ai-settings', adminAiSettingsController);
+adminRoutes.put('/ai-settings', adminUpdateAiSettingsController);
+adminRoutes.post('/ai-settings/fetch-models', adminFetchAiModelsController);
+adminRoutes.get('/ai-models', adminAiModelsController);
+adminRoutes.patch('/ai-models/:id', adminSetAiModelEnabledController);
+adminRoutes.delete('/ai-models/:id', adminDeleteAiModelController);
 
 export default adminRoutes;

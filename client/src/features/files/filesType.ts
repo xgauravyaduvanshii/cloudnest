@@ -74,6 +74,24 @@ export interface GetAllFilesResponse {
   };
 }
 
+/**
+ * Google Drive is token-paged and exposes no cheap total, so its pagination is
+ * expressed as a continuation token + hasMore rather than page/total numbers.
+ */
+export interface GoogleDrivePagination {
+  pageSize: number;
+  hasMore: boolean;
+  nextPageToken: string | null;
+  pageToken: string | null;
+}
+
+export interface GoogleDriveItemsResponse {
+  message: string;
+  folders: FolderType[];
+  files: FileType[];
+  pagination: GoogleDrivePagination;
+}
+
 export interface CreateFolderResponse {
   message: string;
   folder: FolderType;

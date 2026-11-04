@@ -4,6 +4,7 @@ import {
   DeleteFilesResponse,
   DownloadFilesResponse,
   GetAllFilesResponse,
+  GoogleDriveItemsResponse,
   MoveFilesResponse,
   MoveFolderResponse,
   Params,
@@ -87,7 +88,7 @@ export const fileApi = apiClient.injectEndpoints({
       invalidatesTags: ["files"],
     }),
     getGoogleDriveItems: builder.query<
-      GetAllFilesResponse,
+      GoogleDriveItemsResponse,
       {
         accountId: string;
         folderId?: string | null;

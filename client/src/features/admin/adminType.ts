@@ -78,3 +78,49 @@ export type AdminStorageStatusPayload = {
   id: string;
   status: StorageAccountStatus;
 };
+
+export interface AdminAiSettings {
+  provider: string;
+  baseUrl: string | null;
+  hasKey: boolean;
+  maskedKey: string | null;
+  isEnabled: boolean;
+  defaultChatModel: string | null;
+  defaultVisionModel: string | null;
+  defaultEmbeddingModel: string | null;
+  updatedAt: string;
+}
+
+export interface AdminAiSettingsResponse {
+  message: string;
+  settings: AdminAiSettings | null;
+}
+
+export interface AdminAiSettingsUpdatePayload {
+  provider?: string;
+  baseUrl?: string | null;
+  apiKey?: string | null;
+  isEnabled?: boolean;
+  defaultChatModel?: string | null;
+  defaultVisionModel?: string | null;
+  defaultEmbeddingModel?: string | null;
+}
+
+export interface AdminAiModel {
+  id: string;
+  modelId: string;
+  displayName: string;
+  kind: "chat" | "embedding" | "vision";
+  isEnabled: boolean;
+}
+
+export interface AdminAiModelsResponse {
+  message: string;
+  models: AdminAiModel[];
+}
+
+export interface AdminAiModelsFetchResponse {
+  message: string;
+  fetched: number;
+  inserted: number;
+}

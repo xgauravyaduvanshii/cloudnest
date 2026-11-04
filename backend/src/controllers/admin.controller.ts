@@ -20,6 +20,14 @@ import {
   updateAdminUserService,
   updateProviderSettingService,
 } from '../services/admin.service';
+import {
+  deleteAiModelService,
+  fetchProviderModelsService,
+  getAiSettingsService,
+  listAiModelsService,
+  setAiModelEnabledService,
+  updateAiSettingsService,
+} from '../services/admin-ai.service';
 
 const paginationFromQuery = (req: Request, defaultPageSize = 20) => ({
   pageSize: parseInt(req.query.pageSize as string) || defaultPageSize,
@@ -258,3 +266,47 @@ export const adminUpdateProviderSettingsController = asyncHandler(
     });
   },
 );
+
+const aiSettingsSchema = z.object({
+  provider: z.string().trim().min(1).max(64).optional(),
+  baseUrl: z.string().trim().max(512).nullable().optional(),
+  apiKey: z.string().trim().max(512).nullable().optional(),
+  isEnabled: z.boolean().optional(),
+  defaultChatModel: z.string().trim().max(255).nullable().optional(),
+  defaultVisionModel: z.string().trim().max(255).nullable().optional(),
+  defaultEmbeddingModel: z.string().trim().max(255).nullable().optional(),
+});
+
+export const adminAiSettingsController = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await getAiSettingsService();
+  return res.status(HTTPSTATUS.OK).json({ message: 'AI settings retrieved', ...result });
+});
+
+export const adminUpdateAiSettingsController = asyncHandler(async (req: Request, res: Response) => {
+  const body = aiSettingsSchema.parse(req.body);
+  const result = await updateAiSettingsService(req.user!._id, body);
+  return res.status(HTTPSTATUS.OK).json({ message: 'AI settings updated', ...result });
+});
+
+export const adminFetchAiModelsController = asyncHandler(async (req: Request, res: Response) => {
+  const result = await fetchProviderModelsService(req.user!._id);
+  return res.status(HTTPSTATUS.OK).json({ message: 'Models fetched', ...result });
+});
+
+export const adminAiModelsController = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await listAiModelsService();
+  return res.status(HTTPSTATUS.OK).json({ message: 'Models retrieved', ...result });
+});
+
+export const adminSetAiModelEnabledController = asyncHandler(async (req: Request, res: Response) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const { isEnabled } = z.object({ isEnabled: z.boolean() }).parse(req.body);
+  const result = await setAiModelEnabledService(req.user!._id, id, isEnabled);
+  return res.status(HTTPSTATUS.OK).json({ message: 'Model updated', ...result });
+});
+
+export const adminDeleteAiModelController = asyncHandler(async (req: Request, res: Response) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const result = await deleteAiModelService(req.user!._id, id);
+  return res.status(HTTPSTATUS.OK).json({ message: 'Model deleted', ...result });
+});

@@ -6,6 +6,8 @@ import type {
   AiChatOptions,
   AiChatResult,
   AiProvider,
+  AiProviderConfig,
+  RemoteModel,
 } from './ai-provider';
 
 type ContentPart =
@@ -25,44 +27,56 @@ const buildContent = (message: AiChatMessage): string | ContentPart[] => {
   return message.content;
 };
 
+const humanizeModelId = (modelId: string): string => {
+  const tail = modelId.split('/').pop() ?? modelId;
+  return tail.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 /**
- * A single provider implementation covering every OpenAI-compatible /chat/completions
- * and /embeddings endpoint (OpenAI, Groq, Together, Fireworks, local Ollama, etc.).
+ * A single provider implementation covering every OpenAI-compatible /chat/completions,
+ * /embeddings and /models endpoint (OpenAI, Groq, Together, XRouter, local Ollama, etc.).
+ * Configuration is injected (resolved from admin DB settings, falling back to env).
  */
 export class OpenAICompatibleProvider implements AiProvider {
   readonly id: string;
   readonly chatModel: string;
   readonly visionModel: string;
   readonly embeddingModel: string;
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private readonly enabled: boolean;
 
-  constructor(id = Env.AI_PROVIDER) {
-    this.id = id;
-    this.chatModel = Env.AI_MODEL;
-    this.visionModel = Env.AI_VISION_MODEL;
-    this.embeddingModel = Env.AI_EMBEDDING_MODEL;
+  constructor(config?: Partial<AiProviderConfig>) {
+    this.id = config?.id ?? Env.AI_PROVIDER;
+    this.baseUrl = config?.baseUrl ?? Env.AI_BASE_URL;
+    this.apiKey = config?.apiKey ?? Env.AI_API_KEY;
+    this.chatModel = config?.chatModel ?? Env.AI_MODEL;
+    this.visionModel = config?.visionModel ?? Env.AI_VISION_MODEL;
+    this.embeddingModel = config?.embeddingModel ?? Env.AI_EMBEDDING_MODEL;
+    this.enabled = config?.enabled ?? Env.AI_ENABLED === 'true';
   }
 
   isConfigured(): boolean {
-    return Env.AI_ENABLED === 'true' && !!Env.AI_API_KEY && !!Env.AI_BASE_URL;
+    return this.enabled && !!this.apiKey && !!this.baseUrl;
   }
 
   private assertConfigured() {
     if (!this.isConfigured()) {
       throw new InternalServerException(
-        'AI is not configured. Set AI_ENABLED, AI_API_KEY and AI_BASE_URL.',
+        'AI is not configured. Set the provider in the admin panel (or AI_* env vars).',
       );
     }
   }
 
-  private async post(path: string, body: unknown): Promise<any> {
-    const base = Env.AI_BASE_URL.replace(/\/$/, '');
+  private async request(path: string, init: RequestInit): Promise<any> {
+    const base = this.baseUrl.replace(/\/$/, '');
     const response = await fetch(`${base}${path}`, {
-      method: 'POST',
+      ...init,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${Env.AI_API_KEY}`,
+        Authorization: `Bearer ${this.apiKey}`,
+        ...(init.headers ?? {}),
       },
-      body: JSON.stringify(body),
     });
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
@@ -70,6 +84,10 @@ export class OpenAICompatibleProvider implements AiProvider {
       throw new InternalServerException(`AI provider error (${response.status})`);
     }
     return response.json();
+  }
+
+  private async post(path: string, body: unknown): Promise<any> {
+    return this.request(path, { method: 'POST', body: JSON.stringify(body) });
   }
 
   async chat(options: AiChatOptions): Promise<AiChatResult> {
@@ -114,5 +132,27 @@ export class OpenAICompatibleProvider implements AiProvider {
     return [...rows]
       .sort((a, b) => a.index - b.index)
       .map((r) => r.embedding);
+  }
+
+  /**
+   * List models from the provider's /models endpoint. Uses the configured key/base
+   * URL directly (does not require the enabled toggle, so an admin can fetch the
+   * catalog before switching AI on).
+   */
+  async listModels(): Promise<RemoteModel[]> {
+    if (!this.apiKey || !this.baseUrl) {
+      throw new InternalServerException(
+        'AI provider is not configured. Set the base URL and API key first.',
+      );
+    }
+    const data = await this.request('/models', { method: 'GET' });
+    const rows: { id?: string; name?: string }[] = data?.data ?? [];
+    return rows
+      .map((r) => {
+        const modelId = r.id ?? r.name;
+        if (!modelId) return null;
+        return { modelId, displayName: r.name ? r.name : humanizeModelId(modelId) };
+      })
+      .filter((r): r is RemoteModel => !!r);
   }
 }

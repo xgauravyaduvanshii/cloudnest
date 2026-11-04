@@ -1,9 +1,12 @@
 import { apiClient } from "@/app/api-client";
 import {
+  AiModelsResponse,
   AiStatusResponse,
   AssistantAction,
   AssistantApplyResponse,
+  AssistantPlanRequestBody,
   AssistantPlanResponse,
+  ChatRequestBody,
   ChatResponse,
   ConversationMessagesResponse,
   EnrichResponse,
@@ -16,6 +19,10 @@ export const aiApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
     aiStatus: builder.query<AiStatusResponse, void>({
       query: () => ({ url: "/ai/status", method: "GET" }),
+    }),
+    aiModels: builder.query<AiModelsResponse, void>({
+      query: () => ({ url: "/ai/models", method: "GET" }),
+      providesTags: ["ai"],
     }),
     aiSearch: builder.query<SearchResponse, { query: string; limit?: number }>({
       query: ({ query, limit }) => ({
@@ -32,7 +39,10 @@ export const aiApi = apiClient.injectEndpoints({
       query: (fileId) => ({ url: `/ai/files/${fileId}/metadata`, method: "GET" }),
       providesTags: ["ai"],
     }),
-    assistantPlan: builder.mutation<AssistantPlanResponse, { instruction: string }>({
+    assistantPlan: builder.mutation<
+      AssistantPlanResponse,
+      AssistantPlanRequestBody
+    >({
       query: (body) => ({ url: "/ai/assistant/plan", method: "POST", body }),
     }),
     assistantApply: builder.mutation<
@@ -42,10 +52,7 @@ export const aiApi = apiClient.injectEndpoints({
       query: (body) => ({ url: "/ai/assistant/apply", method: "POST", body }),
       invalidatesTags: ["collections", "files", "activity"],
     }),
-    chat: builder.mutation<
-      ChatResponse,
-      { message: string; conversationId?: string; fileIds?: string[] }
-    >({
+    chat: builder.mutation<ChatResponse, ChatRequestBody>({
       query: (body) => ({ url: "/ai/chat", method: "POST", body }),
       invalidatesTags: ["ai"],
     }),
@@ -71,6 +78,7 @@ export const aiApi = apiClient.injectEndpoints({
 
 export const {
   useAiStatusQuery,
+  useAiModelsQuery,
   useLazyAiSearchQuery,
   useAiSearchQuery,
   useEnrichFileMutation,

@@ -12,7 +12,7 @@ import {
   Sun,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-import { PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { PROTECTED_ROUTES, PUBLIC_ROUTES } from "@/routes/common/routePath";
 import { cn } from "@/lib/utils";
 import Logo from "../logo/logo";
 import { Button } from "../ui/button";
@@ -44,7 +44,7 @@ const Navbar = () => {
     },
     {
       icon: HelpCircle,
-      href: PROTECTED_ROUTES.DOCS,
+      href: PUBLIC_ROUTES.DOCS,
       label: "Docs",
     },
     {
