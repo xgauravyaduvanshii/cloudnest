@@ -7,6 +7,7 @@ import FolderModel, { FolderDocument } from '../models/folder.model';
 import UserModel from '../models/user.model';
 import ActivityModel from '../models/activity.model';
 import ShareModel from '../models/share.model';
+import { dispatchWebhook } from './webhook.service';
 import StorageAccountModel, {
   StorageProviderType,
 } from '../models/storage-account.model';
@@ -354,6 +355,12 @@ export const uploadFilesService = async (
         storageAccountId: account.id,
       },
     }).catch(() => undefined);
+
+    dispatchWebhook(userId, 'file.uploaded', {
+      count: successfulRes.length,
+      provider: account.provider,
+      fileIds: successfulRes.map((r) => r.fileId),
+    });
   }
 
   return {
@@ -888,6 +895,8 @@ export const deleteFilesService = async (
       entityId: successfulFileIds[0],
       metadata: { count: deletedCount },
     }).catch(() => undefined);
+
+    dispatchWebhook(userId, 'file.deleted', { count: deletedCount, fileIds: successfulFileIds });
   }
 
   const touchedAccountIds = Array.from(

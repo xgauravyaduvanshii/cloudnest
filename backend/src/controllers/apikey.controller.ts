@@ -9,15 +9,21 @@ import {
   createApiKeyService,
   deleteApiKeyService,
   getAllApiKeysService,
+  revokeApiKeyService,
+  rotateApiKeyService,
 } from '../services/apikey.service';
 
 export const createApiKeyController = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
-    const { name } = createApiKeySchema.parse(req.body);
+    const { name, scopes, expiresInDays } = createApiKeySchema.parse(req.body);
 
-    const { rawKey } = await createApiKeyService(userId, name);
+    const { rawKey } = await createApiKeyService(userId, {
+      name,
+      scopes,
+      expiresInDays,
+    });
 
     return res.status(HTTPSTATUS.OK).json({
       message: 'API key created successfully',
@@ -55,6 +61,29 @@ export const deleteApiKeyController = asyncHandler(
     return res.status(HTTPSTATUS.OK).json({
       message: 'API key deleted successfully',
       data: result,
+    });
+  },
+);
+
+export const revokeApiKeyController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    const { id } = deleteApiKeySchema.parse(req.params);
+    const result = await revokeApiKeyService(userId, id);
+    return res
+      .status(HTTPSTATUS.OK)
+      .json({ message: 'API key revoked successfully', data: result });
+  },
+);
+
+export const rotateApiKeyController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    const { id } = deleteApiKeySchema.parse(req.params);
+    const { rawKey } = await rotateApiKeyService(userId, id);
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'API key rotated successfully',
+      key: rawKey,
     });
   },
 );

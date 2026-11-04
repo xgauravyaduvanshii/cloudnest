@@ -23,6 +23,7 @@ export const PUBLIC_ROUTES = {
 export const PROTECTED_ROUTES = {
   OVERVIEW: "/overview",
   APIKEYS: "/api-keys",
+  WEBHOOKS: "/webhooks",
   FILES: "/files",
   COLLECTIONS: "/collections",
   ACTIVITY: "/activity",

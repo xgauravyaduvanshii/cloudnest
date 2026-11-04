@@ -9,6 +9,7 @@ import FileModel from '../models/file.model';
 import FolderModel from '../models/folder.model';
 import CollectionModel from '../models/collection.model';
 import ActivityModel from '../models/activity.model';
+import { dispatchWebhook } from './webhook.service';
 import { hashValue, compareValue } from '../utils/bcrypt';
 import { Env } from '../config/env.config';
 import { toPublicFile } from './files.service';
@@ -94,6 +95,13 @@ export const createShareService = async (
     entityId: input.resourceId,
     metadata: { shareId: share._id, permission: share.permission },
   }).catch(() => undefined);
+
+  dispatchWebhook(uid, 'share.created', {
+    shareId: share._id,
+    resourceType: input.resourceType,
+    resourceId: input.resourceId,
+    permission: share.permission,
+  });
   await ActivityModel.recordShareAudit({
     shareId: share._id,
     action: 'created',

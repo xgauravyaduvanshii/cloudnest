@@ -62,6 +62,12 @@ jest.mock('../files.service', () => ({
   })),
 }));
 
+// Phase 4: createShareService fans out a webhook event; stub it so the test
+// never touches the webhook model / database.
+jest.mock('../webhook.service', () => ({
+  dispatchWebhook: jest.fn(),
+}));
+
 import ShareModel from '../../models/share.model';
 import FileModel from '../../models/file.model';
 import ActivityModel from '../../models/activity.model';

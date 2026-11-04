@@ -27,6 +27,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useCreateApiKeyMutation } from "@/features/apikeys/apikeysAPI";
+import { API_KEY_SCOPES, type ApiKeyScope } from "@/features/apikeys/apikeysType";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 const createApiKeySchema = z.object({
@@ -53,6 +55,11 @@ const CreateApiKeyDialog = ({ children }: CreateApiKeyDialogProps) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [scopes, setScopes] = useState<ApiKeyScope[]>([
+    "files:read",
+    "files:write",
+    "upload:write",
+  ]);
 
   const form = useForm<CreateApiKeyFormData>({
     resolver: zodResolver(createApiKeySchema),
@@ -64,7 +71,7 @@ const CreateApiKeyDialog = ({ children }: CreateApiKeyDialogProps) => {
   const [createApiKey, { isLoading }] = useCreateApiKeyMutation();
 
   const onSubmit = async (values: CreateApiKeyFormData) => {
-    createApiKey(values.name)
+    createApiKey({ name: values.name, scopes })
       .unwrap()
       .then((res) => {
         setGeneratedKey(res.key);
@@ -147,6 +154,38 @@ const CreateApiKeyDialog = ({ children }: CreateApiKeyDialogProps) => {
                     </FormItem>
                   )}
                 />
+
+                <div className="space-y-2">
+                  <FormLabel>Scopes</FormLabel>
+                  <FormDescription>
+                    Least-privilege access. Only grant the scopes this key needs.
+                  </FormDescription>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {API_KEY_SCOPES.map((scope) => (
+                      <label
+                        key={scope}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Checkbox
+                          checked={scopes.includes(scope)}
+                          onCheckedChange={(checked) =>
+                            setScopes((prev) =>
+                              checked
+                                ? [...prev, scope]
+                                : prev.filter((s) => s !== scope)
+                            )
+                          }
+                        />
+                        <span className="font-mono text-xs">{scope}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {scopes.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      Select at least one scope.
+                    </p>
+                  )}
+                </div>
 
                 <DialogFooter>
                   <Button type="submit" disabled={isLoading} className="w-full">

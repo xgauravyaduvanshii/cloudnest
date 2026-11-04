@@ -1,4 +1,5 @@
 import ApiKeys from "@/pages/apikeys";
+import WebhooksPage from "@/pages/webhooks";
 import { AUTH_ROUTES, PROTECTED_ROUTES } from "./routePath";
 import SignIn from "@/pages/auth/sign-in";
 import SignUp from "@/pages/auth/sign-up";
@@ -23,6 +24,7 @@ export const protectedRoutePaths = [
   { path: PROTECTED_ROUTES.ACTIVITY, element: <Activity /> },
   { path: PROTECTED_ROUTES.STORAGE_ACCOUNTS, element: <StorageAccounts /> },
   { path: PROTECTED_ROUTES.APIKEYS, element: <ApiKeys /> },
+  { path: PROTECTED_ROUTES.WEBHOOKS, element: <WebhooksPage /> },
   { path: PROTECTED_ROUTES.ADMIN, element: <Admin /> },
   { path: PROTECTED_ROUTES.DOCS, element: <Docs /> },
   {

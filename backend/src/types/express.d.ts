@@ -6,5 +6,12 @@ declare global {
       _id?: any;
       password?: any;
     }
+    interface Request {
+      apiKey?: {
+        id: string;
+        displayKey: string;
+        scopes: string[];
+      };
+    }
   }
 }

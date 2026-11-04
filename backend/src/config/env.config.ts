@@ -40,6 +40,9 @@ const envConfig = () => ({
   // Per-worker upload concurrency (global cap across all accounts).
   UPLOAD_WORKER_CONCURRENCY: getEnv('UPLOAD_WORKER_CONCURRENCY', '4'),
 
+  // Fixed-window rate limit for the public v1 API (requests per key per minute).
+  API_RATE_LIMIT_PER_MIN: getEnv('API_RATE_LIMIT_PER_MIN', '120'),
+
   LOGTAIL_SOURCE_TOKEN: getEnv('LOGTAIL_SOURCE_TOKEN'),
   LOGTAIL_INGESTING_HOST: getEnv('LOGTAIL_INGESTING_HOST'),
 

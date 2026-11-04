@@ -1,6 +1,6 @@
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
 import { NavLink, useLocation } from "react-router-dom";
-import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, Shield, Settings } from "lucide-react";
+import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, Shield, Settings, Webhook } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTypedSelector } from "@/app/hook";
 
@@ -43,6 +43,11 @@ const SideBar = () => {
       icon: Key,
       href: PROTECTED_ROUTES.APIKEYS,
       label: "Api Keys",
+    },
+    {
+      icon: Webhook,
+      href: PROTECTED_ROUTES.WEBHOOKS,
+      label: "Webhooks",
     },
     ...(user?.role === "ADMIN"
       ? [

@@ -13,6 +13,7 @@ import collectionsRoutes from './collections.route';
 import sharesRoutes from './shares.route';
 import activityRoutes from './activity.route';
 import aiRoutes from './ai.route';
+import webhookRoutes from './webhook.route';
 
 const internalRoutes = Router();
 
@@ -24,6 +25,7 @@ internalRoutes.use('/collections', passportAuthenticateJwt, collectionsRoutes);
 internalRoutes.use('/shares', passportAuthenticateJwt, sharesRoutes);
 internalRoutes.use('/activity', passportAuthenticateJwt, activityRoutes);
 internalRoutes.use('/ai', passportAuthenticateJwt, aiRoutes);
+internalRoutes.use('/webhooks', passportAuthenticateJwt, webhookRoutes);
 internalRoutes.use('/analytics', passportAuthenticateJwt, analyticsRoutes);
 internalRoutes.use(
   '/storage-accounts',

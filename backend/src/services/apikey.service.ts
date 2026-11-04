@@ -1,10 +1,22 @@
 import ApiKeyModel from '../models/apiKeys.model';
 import { NotFoundException, UnauthorizedException } from '../utils/app-error';
 import { generateAPIKey } from '../utils/key';
+import { DEFAULT_SCOPES } from '../constant/scopes';
+
+export type CreateApiKeyInput = {
+  name: string;
+  scopes?: string[];
+  expiresInDays?: number | null;
+};
+
+const computeExpiresAt = (expiresInDays?: number | null) => {
+  if (!expiresInDays) return null;
+  return new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+};
 
 export const createApiKeyService = async (
   userId: string | undefined,
-  name: string,
+  input: CreateApiKeyInput,
 ) => {
   if (!userId) throw new UnauthorizedException('Unauthorized access');
 
@@ -12,9 +24,11 @@ export const createApiKeyService = async (
 
   await ApiKeyModel.create({
     userId,
-    name,
+    name: input.name,
     hashedKey,
     displayKey,
+    scopes: input.scopes?.length ? input.scopes : DEFAULT_SCOPES,
+    expiresAt: computeExpiresAt(input.expiresInDays),
   });
 
   return {
@@ -71,4 +85,32 @@ export const deleteApiKeyService = async (
   return {
     deletedCount,
   };
+};
+
+/** Soft revoke: key stops working immediately but history/usage logs are kept. */
+export const revokeApiKeyService = async (userId: string | undefined, apiKeyId: string) => {
+  if (!userId) throw new UnauthorizedException('Unauthorized access');
+  const revoked = await ApiKeyModel.revokeByIdForUser(userId, apiKeyId);
+  if (!revoked) throw new NotFoundException('API Key not found or already revoked');
+  return { revoked: true };
+};
+
+/** Rotate: revoke the old key and issue a new one with the same scopes/expiry. */
+export const rotateApiKeyService = async (userId: string | undefined, apiKeyId: string) => {
+  if (!userId) throw new UnauthorizedException('Unauthorized access');
+  const existing = await ApiKeyModel.findByIdForUser(userId, apiKeyId);
+  if (!existing) throw new NotFoundException('API Key not found');
+
+  await ApiKeyModel.revokeByIdForUser(userId, apiKeyId);
+  const { rawKey, hashedKey, displayKey } = generateAPIKey();
+  await ApiKeyModel.create({
+    userId,
+    name: existing.name,
+    displayKey,
+    hashedKey,
+    scopes: existing.scopes.length ? existing.scopes : DEFAULT_SCOPES,
+    expiresAt: existing.expiresAt,
+  });
+
+  return { rawKey };
 };

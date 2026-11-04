@@ -1,5 +1,6 @@
 import { apiClient } from "@/app/api-client";
 import {
+  CreateApiKeyInput,
   CreateApiKeyResponse,
   GetAllApiKeysResponse,
   Params,
@@ -7,11 +8,11 @@ import {
 
 export const fileApi = apiClient.injectEndpoints({
   endpoints: (builder) => ({
-    createApiKey: builder.mutation<CreateApiKeyResponse, string>({
-      query: (name) => ({
+    createApiKey: builder.mutation<CreateApiKeyResponse, CreateApiKeyInput>({
+      query: (body) => ({
         url: "/apikey/create",
         method: "POST",
-        body: { name },
+        body,
       }),
       invalidatesTags: ["apikey"],
     }),
@@ -38,6 +39,22 @@ export const fileApi = apiClient.injectEndpoints({
       }),
       invalidatesTags: ["apikey"],
     }),
+
+    revokeApiKey: builder.mutation<{ message: string }, string>({
+      query: (apiKeyId) => ({
+        url: `/apikey/${apiKeyId}/revoke`,
+        method: "POST",
+      }),
+      invalidatesTags: ["apikey"],
+    }),
+
+    rotateApiKey: builder.mutation<CreateApiKeyResponse, string>({
+      query: (apiKeyId) => ({
+        url: `/apikey/${apiKeyId}/rotate`,
+        method: "POST",
+      }),
+      invalidatesTags: ["apikey"],
+    }),
   }),
 });
 
@@ -45,4 +62,6 @@ export const {
   useCreateApiKeyMutation,
   useGetAllApikeysQuery,
   useDeleteApiKeyMutation,
+  useRevokeApiKeyMutation,
+  useRotateApiKeyMutation,
 } = fileApi;

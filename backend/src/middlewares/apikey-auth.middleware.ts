@@ -48,6 +48,16 @@ export const apiKeyAuthMiddleware = async (
       throw new UnauthorizedException('Invalid API key');
     }
 
+    if (apiKeyDoc.isRevoked) {
+      logger.warn('Revoked API key used', apiKeyDoc.displayKey);
+      throw new UnauthorizedException('API key has been revoked');
+    }
+
+    if (apiKeyDoc.expiresAt && new Date(apiKeyDoc.expiresAt).getTime() < Date.now()) {
+      logger.warn('Expired API key used', apiKeyDoc.displayKey);
+      throw new UnauthorizedException('API key has expired');
+    }
+
     const user = await findByIdUserService(apiKeyDoc.userId);
 
     if (!user) {
@@ -58,7 +68,21 @@ export const apiKeyAuthMiddleware = async (
       logger.error('Failed to update API key last used time', error),
     );
 
+    // Fire-and-forget usage audit; must never block or fail the request.
+    ApiKeyModel.logUsage({
+      apiKeyId: apiKeyDoc._id,
+      userId: apiKeyDoc.userId,
+      method: req.method,
+      path: req.originalUrl || req.url,
+      ip: req.ip ?? null,
+    }).catch((error) => logger.error('Failed to log API key usage', error));
+
     req.user = user;
+    req.apiKey = {
+      id: apiKeyDoc._id,
+      displayKey: apiKeyDoc.displayKey,
+      scopes: apiKeyDoc.scopes ?? [],
+    };
 
     logger.info('API KEY Used', apiKeyDoc.displayKey);
 
