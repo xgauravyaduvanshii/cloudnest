@@ -20,6 +20,16 @@ export const CheckStorageAvailability = async (
 
     const totalFileSize = files.reduce((sum, file) => sum + file.size, 0);
 
+    if (req.user?.role === 'ADMIN') {
+      logger.info(`Admin upload bypassed app storage quota`, {
+        fileCount: files.length,
+        totalFileSize,
+        userId,
+      });
+      next();
+      return;
+    }
+
     const result = await StorageModel.validateUpload(userId, totalFileSize);
 
     logger.info(`Storage result: ${JSON.stringify(result)}`);

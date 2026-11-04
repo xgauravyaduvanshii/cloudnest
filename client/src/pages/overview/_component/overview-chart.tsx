@@ -230,9 +230,9 @@ export function OverviewChart() {
           {/* {Storage Usage} */}
           <StorageUsage
             usage={storageData?.totalUsage ?? 0} // 500MB in bytes
-            quota={storageData?.quota ?? 0} // 2GB in bytes
+            quota={storageData?.quota ?? null}
             formattedUsage={storageData?.formattedTotalUsage || "0B"}
-            formattedQuota={storageData?.formattedQuota || "2GB"}
+            formattedQuota={storageData?.formattedQuota || "Unlimited"}
           />
         </div>
       </CardContent>

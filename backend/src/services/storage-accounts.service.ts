@@ -226,10 +226,9 @@ export const chooseStorageAccountForUpload = async (
       remaining = account.softQuotaBytes - appUsage;
     }
 
-    if (remaining < totalFileSize) {
-      throw new BadRequestException('Selected storage account does not have enough space');
+    if (remaining >= totalFileSize) {
+      return account;
     }
-    return account;
   }
 
   const providerSettings = await ProviderSettingsModel.findAll();

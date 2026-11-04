@@ -17,8 +17,11 @@ export interface UserAnalyticsAndChartResponse {
   totaluploadFilesForPeriod: number; // Total files uploaded in period
   totalUsageForPeriod: string; // Total usage (formatted: "1.2 MB")
   storageUsageSummary: {
+    appManagedQuota?: number;
+    appManagedUsage?: number;
+    capacitySource?: "admin_unlimited" | "app" | "provider";
     totalUsage: number;
-    quota: number; // Storage limit allowed in bytes
+    quota: number | null; // Storage limit allowed in bytes
     formattedTotalUsage: string; // Formatted current usage
     formattedQuota: string; // Formatted storage limit
   };

@@ -1,6 +1,7 @@
 import { query } from '../config/database.config';
 import { formatBytes } from '../utils/format-byte';
 import StorageModel from '../models/storage.model';
+import StorageAccountModel from '../models/storage-account.model';
 import { UnauthorizedException } from '../utils/app-error';
 
 interface AnalyticsRow {
@@ -10,13 +11,15 @@ interface AnalyticsRow {
 }
 
 export const getUserAnalyticsWithChartService = async (
-  userId: string | undefined,
+  user: Express.User | undefined,
   filter: {
     dateFrom?: Date;
     dateTo?: Date;
   },
 ) => {
+  const userId = user?._id;
   if (!userId) throw new UnauthorizedException('Unauthorized access');
+  const isAdmin = user.role === 'ADMIN';
 
   const { dateFrom, dateTo } = filter;
   const params: unknown[] = [userId];
@@ -60,6 +63,19 @@ export const getUserAnalyticsWithChartService = async (
   );
 
   const storageMetrics = await StorageModel.getStorageMetrics(userId);
+  const activeStorageAccounts = await StorageAccountModel.findEligibleForUser(userId);
+  const accountsWithProviderLimits = activeStorageAccounts.filter(
+    (account) => account.cachedLimitBytes !== null && account.cachedLimitBytes > 0,
+  );
+  const providerUsage = accountsWithProviderLimits.reduce(
+    (sum, account) => sum + account.cachedUsageBytes,
+    0,
+  );
+  const providerQuota = accountsWithProviderLimits.reduce(
+    (sum, account) => sum + (account.cachedLimitBytes || 0),
+    0,
+  );
+  const hasProviderCapacity = providerQuota > 0;
 
   return {
     chart: formattedChartData,
@@ -67,10 +83,33 @@ export const getUserAnalyticsWithChartService = async (
     totalUsageForPeriod: formatBytes(totalUsageForPeriod),
 
     storageUsageSummary: {
-      totalUsage: storageMetrics.usage,
-      quota: storageMetrics.quota,
-      formattedTotalUsage: formatBytes(storageMetrics.usage),
-      formattedQuota: formatBytes(storageMetrics.quota),
+      appManagedUsage: storageMetrics.usage,
+      appManagedQuota: storageMetrics.quota,
+      capacitySource: isAdmin
+        ? 'admin_unlimited'
+        : hasProviderCapacity
+          ? 'provider'
+          : 'app',
+      totalUsage: isAdmin
+        ? storageMetrics.usage
+        : hasProviderCapacity
+          ? providerUsage
+          : storageMetrics.usage,
+      quota: isAdmin
+        ? null
+        : hasProviderCapacity
+          ? providerQuota
+          : storageMetrics.quota,
+      formattedTotalUsage: formatBytes(
+        isAdmin
+          ? storageMetrics.usage
+          : hasProviderCapacity
+            ? providerUsage
+            : storageMetrics.usage,
+      ),
+      formattedQuota: isAdmin
+        ? 'Unlimited'
+        : formatBytes(hasProviderCapacity ? providerQuota : storageMetrics.quota),
     },
   };
 };

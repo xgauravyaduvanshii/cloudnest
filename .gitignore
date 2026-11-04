@@ -22,3 +22,12 @@ node_modules/
 build/
 tmp/
 temp/
+
+# Ignore deployment / hosting files
+Caddyfile
+Caddyfile.bak*
+docker-compose.yml
+HOSTING.md
+
+# Ignore postgres env file
+.env.postgres

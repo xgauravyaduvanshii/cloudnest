@@ -2,7 +2,7 @@ import { Progress } from "@/components/ui/progress";
 
 interface StorageUsageProps {
   usage: number; // in bytes
-  quota: number;
+  quota: number | null;
   formattedUsage: string;
   formattedQuota: string;
 }
@@ -13,7 +13,8 @@ const StorageUsage = ({
   formattedUsage,
   formattedQuota,
 }: StorageUsageProps) => {
-  const percentage = quota > 0 ? (usage / quota) * 100 : 0;
+  const isUnlimited = quota === null;
+  const percentage = !isUnlimited && quota > 0 ? (usage / quota) * 100 : 0;
 
   return (
     <div className="pt-3">
@@ -24,7 +25,9 @@ const StorageUsage = ({
           className="relative h-4 w-full overflow-hidden rounded-full"
         />
         <span className="font-semibold text-muted-foreground text-[13px]">
-          {formattedUsage} / {formattedQuota} used
+          {isUnlimited
+            ? `${formattedUsage} used / ${formattedQuota}`
+            : `${formattedUsage} / ${formattedQuota} used`}
         </span>
       </div>
     </div>

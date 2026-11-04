@@ -1,4 +1,4 @@
-export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+export const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
 export const MAX_FILES = 100; // per request
 export const ALLOWED_MIME_TYPES = [
   // Images

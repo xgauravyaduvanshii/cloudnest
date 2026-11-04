@@ -155,6 +155,49 @@ const StorageAccountModel = {
     return result.rows[0] ? toStorageAccountDocument(result.rows[0]) : null;
   },
 
+  async findActiveReplacementForAccount(
+    account: StorageAccountDocument,
+    client?: Queryable,
+  ) {
+    const result = await runQuery<StorageAccountRow>(
+      `SELECT *
+       FROM storage_accounts
+       WHERE id <> $1
+         AND provider = $2
+         AND status = 'ACTIVE'
+         AND owner_type = $3
+         AND user_id IS NOT DISTINCT FROM $4::uuid
+         AND (
+           ($5::text IS NOT NULL AND external_email = $5::text)
+           OR ($6::text IS NOT NULL AND external_account_id = $6::text)
+           OR (
+             $5::text IS NULL
+             AND $6::text IS NULL
+             AND display_name = $7::text
+           )
+         )
+       ORDER BY
+         CASE
+           WHEN $5::text IS NOT NULL AND external_email = $5::text THEN 0
+           WHEN $6::text IS NOT NULL AND external_account_id = $6::text THEN 1
+           ELSE 2
+         END,
+         updated_at DESC
+       LIMIT 1`,
+      [
+        account.id,
+        account.provider,
+        account.ownerType,
+        account.userId,
+        account.externalEmail,
+        account.externalAccountId,
+        account.displayName,
+      ],
+      client,
+    );
+    return result.rows[0] ? toStorageAccountDocument(result.rows[0]) : null;
+  },
+
   async findDefaultS3Admin(client?: Queryable) {
     const result = await runQuery<StorageAccountRow>(
       `SELECT *

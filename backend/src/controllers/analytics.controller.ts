@@ -5,8 +5,6 @@ import { getUserAnalyticsWithChartService } from '../services/analytics.service'
 
 export const getUserAnalyticsWithChartController = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-
     const { from, to } = req.query;
 
     const filter = {
@@ -14,7 +12,7 @@ export const getUserAnalyticsWithChartController = asyncHandler(
       dateTo: to ? new Date(to as string) : undefined,
     };
 
-    const result = await getUserAnalyticsWithChartService(userId, filter);
+    const result = await getUserAnalyticsWithChartService(req.user, filter);
 
     return res.status(HTTPSTATUS.OK).json({
       message: 'User analytics retrieved successfully',

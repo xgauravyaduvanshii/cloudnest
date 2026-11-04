@@ -79,6 +79,21 @@ const getFileStorageAccount = async (file: FileDocument) => {
 
   const account = await StorageAccountModel.findById(file.storageAccountId);
   if (!account) throw new NotFoundException('Storage account not found');
+  if (account.status === 'ACTIVE') return account;
+
+  const replacement = await StorageAccountModel.findActiveReplacementForAccount(
+    account,
+  );
+  if (replacement) {
+    logger.warn('Using active replacement storage account for file read', {
+      fileId: file.id,
+      provider: file.provider,
+      storageAccountId: account.id,
+      replacementStorageAccountId: replacement.id,
+    });
+    return replacement;
+  }
+
   return account;
 };
 
@@ -176,6 +191,10 @@ export const uploadFilesService = async (
     options.storageAccountId,
   );
   const provider = getStorageProvider(account.provider);
+  const providerFolderId =
+    options.storageAccountId && account.id !== options.storageAccountId
+      ? null
+      : options.providerFolderId || null;
   const relativePaths = normalizeRelativePaths(options.relativePaths);
   const folderIdsByIndex: (string | null)[] = [];
   const folderPathsByIndex: string[][] = [];
@@ -183,7 +202,7 @@ export const uploadFilesService = async (
   for (const [index, file] of files.entries()) {
     const relativePath = relativePaths[index] || file.originalname;
     const relativeFolderParts = getRelativeFolderParts(relativePath);
-    if (options.providerFolderId) {
+    if (providerFolderId) {
       folderIdsByIndex[index] = null;
       folderPathsByIndex[index] = relativeFolderParts;
       continue;
@@ -196,7 +215,7 @@ export const uploadFilesService = async (
           providerType,
           relativeFolderParts,
         )
-      : options.providerFolderId
+      : providerFolderId
         ? null
         : options.folderId || null;
     folderPathsByIndex[index] = await getFolderPathNames(
@@ -219,7 +238,7 @@ export const uploadFilesService = async (
       try {
         providerResult = await provider.upload(account, userId, file, {
           folderPath: folderPathsByIndex[index],
-          providerFolderId: options.providerFolderId || null,
+          providerFolderId,
         });
         const createdFile = await FileModel.create({
           userId,

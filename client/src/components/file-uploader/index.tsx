@@ -27,7 +27,18 @@ export interface FileUploaderRef {
   getSelectedFiles: () => File[];
 }
 
-const DEFAULT_MAX_FILE_SIZE = 100 * 1024 * 1024;
+const DEFAULT_MAX_FILE_SIZE = 1024 * 1024 * 1024;
+
+const formatFileSizeLimit = (size: number) => {
+  const megabytes = size / (1024 * 1024);
+  const gigabytes = megabytes / 1024;
+
+  if (gigabytes >= 1 && Number.isInteger(gigabytes)) {
+    return `${gigabytes}GB`;
+  }
+
+  return `${Math.round(megabytes)}MB`;
+};
 
 export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(
   (
@@ -70,7 +81,7 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(
         const newFiles = incomingFiles.filter((file) => {
           if (file.size > maxFileSize) {
             toast.error(
-              `File "${file.name}" exceeds the ${maxFileSize / (1024 * 1024)}MB limit.`
+              `File "${file.name}" exceeds the ${formatFileSizeLimit(maxFileSize)} limit.`
             );
             return false;
           }
@@ -104,7 +115,7 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(
         rejectedFiles.forEach((rejectedFile) => {
           if (rejectedFile.file.size > maxFileSize) {
             toast.error(
-              `File "${rejectedFile.file.name}" exceeds the ${maxFileSize / (1024 * 1024)}MB limit.`
+              `File "${rejectedFile.file.name}" exceeds the ${formatFileSizeLimit(maxFileSize)} limit.`
             );
           } else {
             toast.error(`File "${rejectedFile.file.name}" type not allowed.`);
@@ -154,8 +165,10 @@ export const FileUploader = forwardRef<FileUploaderRef, FileUploaderProps>(
           maxSize={maxFileSize}
           onDrop={handleDrop}
           onDropRejected={(rejectedFiles) => {
-            if (rejectedFiles[0].file.size > DEFAULT_MAX_FILE_SIZE) {
-              toast.error("File size exceeds the limit");
+            if (rejectedFiles[0].file.size > maxFileSize) {
+              toast.error(
+                `File size exceeds the ${formatFileSizeLimit(maxFileSize)} limit`
+              );
             }
           }}
         >

@@ -118,7 +118,7 @@ export const FileUploaderDialog = (props: {
           <FileUploader
             ref={fileUploaderRef}
             onFilesSelected={setSelectedFiles} // Update dialog's state with selected files
-            maxFileSize={100 * 1024 * 1024} // 100MB
+            maxFileSize={1024 * 1024 * 1024} // 1GB
             allowFolderSelection
             acceptedFileTypes={{
               "image/*": [".jpeg", ".png", ".gif", ".svg", ".jpg"],
