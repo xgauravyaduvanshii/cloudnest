@@ -8,6 +8,8 @@ import Settings from "@/pages/settings";
 import Docs from "@/pages/docs";
 import StorageAccounts from "@/pages/storage-accounts";
 import Admin from "@/pages/admin";
+import Collections from "@/pages/collections";
+import Activity from "@/pages/activity";
 
 export const authenticationRoutePaths = [
   { path: AUTH_ROUTES.SIGN_IN, element: <SignIn /> },
@@ -17,6 +19,8 @@ export const authenticationRoutePaths = [
 export const protectedRoutePaths = [
   { path: PROTECTED_ROUTES.OVERVIEW, element: <Overview /> },
   { path: PROTECTED_ROUTES.FILES, element: <Files /> },
+  { path: PROTECTED_ROUTES.COLLECTIONS, element: <Collections /> },
+  { path: PROTECTED_ROUTES.ACTIVITY, element: <Activity /> },
   { path: PROTECTED_ROUTES.STORAGE_ACCOUNTS, element: <StorageAccounts /> },
   { path: PROTECTED_ROUTES.APIKEYS, element: <ApiKeys /> },
   { path: PROTECTED_ROUTES.ADMIN, element: <Admin /> },

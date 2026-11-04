@@ -5,6 +5,8 @@ import archiver from 'archiver';
 import FileModel, { FileDocument, UploadSourceEnum } from '../models/file.model';
 import FolderModel, { FolderDocument } from '../models/folder.model';
 import UserModel from '../models/user.model';
+import ActivityModel from '../models/activity.model';
+import ShareModel from '../models/share.model';
 import StorageAccountModel, {
   StorageProviderType,
 } from '../models/storage-account.model';
@@ -106,7 +108,7 @@ const getMediaType = (mimeType: string) => {
   return 'file';
 };
 
-const toPublicFile = (file: FileDocument) => {
+export const toPublicFile = (file: FileDocument) => {
   const { storageKey, providerFileId, providerMetadata, ...publicFile } = file;
   return {
     ...publicFile,
@@ -337,6 +339,21 @@ export const uploadFilesService = async (
 
   if (failedRes.length > 0) {
     logger.warn('Failed to upload files', files);
+  }
+
+  if (successfulRes.length > 0) {
+    ActivityModel.record({
+      userId,
+      action: 'file.upload',
+      entityType: 'file',
+      entityId: successfulRes[0].fileId,
+      actorType: uploadedVia === 'API' ? 'api' : 'user',
+      metadata: {
+        count: successfulRes.length,
+        provider: account.provider,
+        storageAccountId: account.id,
+      },
+    }).catch(() => undefined);
   }
 
   return {
@@ -858,6 +875,20 @@ export const deleteFilesService = async (
   const deletedCount = await withTransaction((client) =>
     FileModel.deleteByIdsForUser(successfulFileIds, userId, client),
   );
+
+  // Drop any file shares and record the deletion in the activity timeline.
+  await ShareModel.deleteForResources('file', successfulFileIds).catch((error) =>
+    logger.warn('Failed to clean shares for deleted files', error),
+  );
+  if (deletedCount > 0) {
+    ActivityModel.record({
+      userId,
+      action: 'file.delete',
+      entityType: 'file',
+      entityId: successfulFileIds[0],
+      metadata: { count: deletedCount },
+    }).catch(() => undefined);
+  }
 
   const touchedAccountIds = Array.from(
     new Set(files.map((file) => file.storageAccountId).filter(Boolean)),

@@ -16,6 +16,7 @@ import {
   SecurityPage,
   TermsPage,
 } from "@/pages/public-pages";
+import SharePage from "@/pages/share";
 import { PUBLIC_ROUTES } from "./common/routePath";
 
 function AppRoutes() {
@@ -32,6 +33,7 @@ function AppRoutes() {
         <Route path={PUBLIC_ROUTES.CONTACT} element={<ContactPage />} />
         <Route path={PUBLIC_ROUTES.SECURITY} element={<SecurityPage />} />
         <Route path={PUBLIC_ROUTES.ABOUT} element={<AboutPage />} />
+        <Route path={PUBLIC_ROUTES.SHARE} element={<SharePage />} />
         <Route element={<AuthRoute />}>
           <Route element={<BaseLayout />}>
             {authenticationRoutePaths.map((route) => (

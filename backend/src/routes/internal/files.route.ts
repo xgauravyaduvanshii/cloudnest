@@ -15,6 +15,11 @@ import {
   uploadFilesViaWebController,
 } from '../../controllers/files.controller';
 import { CheckStorageAvailability } from '../../middlewares/check-storage.middleware';
+import {
+  getFileVersionsController,
+  restoreFileVersionController,
+} from '../../controllers/file-versions.controller';
+import { listCollectionsForFileController } from '../../controllers/collections.controller';
 
 const filesRoutes = Router();
 
@@ -36,5 +41,11 @@ filesRoutes.delete('/folders/:folderId', deleteFolderController);
 filesRoutes.patch('/move', moveFilesController);
 filesRoutes.get('/all', getAllFilesController);
 filesRoutes.delete('/bulk-delete', deleteFilesController);
+
+// File version history (list + restore an older revision as latest).
+filesRoutes.get('/:fileId/versions', getFileVersionsController);
+filesRoutes.post('/:fileId/versions/restore', restoreFileVersionController);
+// Collections that contain this file.
+filesRoutes.get('/:fileId/collections', listCollectionsForFileController);
 
 export default filesRoutes;

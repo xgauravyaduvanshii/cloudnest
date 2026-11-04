@@ -1,6 +1,6 @@
 import { PROTECTED_ROUTES } from "@/routes/common/routePath";
 import { NavLink, useLocation } from "react-router-dom";
-import { Database, Folder, HelpCircle, Home, Key, Shield, Settings } from "lucide-react";
+import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, Shield, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTypedSelector } from "@/app/hook";
 
@@ -18,6 +18,16 @@ const SideBar = () => {
       icon: Folder,
       href: PROTECTED_ROUTES.FILES,
       label: "Files",
+    },
+    {
+      icon: FolderKanban,
+      href: PROTECTED_ROUTES.COLLECTIONS,
+      label: "Collections",
+    },
+    {
+      icon: Activity,
+      href: PROTECTED_ROUTES.ACTIVITY,
+      label: "Activity",
     },
     {
       icon: Database,

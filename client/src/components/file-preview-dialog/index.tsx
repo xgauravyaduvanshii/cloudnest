@@ -4,7 +4,10 @@ import {
   ExternalLink,
   FileArchive,
   FileText,
+  FolderPlus,
+  History,
   Loader2,
+  Share2,
 } from "lucide-react";
 import {
   Dialog,
@@ -16,6 +19,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { FileType } from "@/features/files/filesType";
 import { getCleanAssetType } from "@/lib/format-utils";
+import { ShareDialog } from "@/components/file-actions/share-dialog";
+import { VersionsDialog } from "@/components/file-actions/versions-dialog";
+import { AddToCollectionDialog } from "@/components/file-actions/add-to-collection-dialog";
 
 type Props = {
   file: FileType | null;
@@ -31,6 +37,9 @@ const isTextPreview = (file: FileType) =>
 export const FilePreviewDialog = ({ file, open, onOpenChange }: Props) => {
   const [text, setText] = useState("");
   const [isLoadingText, setIsLoadingText] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [collectionOpen, setCollectionOpen] = useState(false);
 
   useEffect(() => {
     if (!open || !file || !isTextPreview(file)) {
@@ -155,7 +164,19 @@ export const FilePreviewDialog = ({ file, open, onOpenChange }: Props) => {
             )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t px-5 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t px-5 py-3">
+          <Button variant="outline" onClick={() => setCollectionOpen(true)}>
+            <FolderPlus className="size-4" />
+            Collection
+          </Button>
+          <Button variant="outline" onClick={() => setVersionsOpen(true)}>
+            <History className="size-4" />
+            Versions
+          </Button>
+          <Button variant="outline" onClick={() => setShareOpen(true)}>
+            <Share2 className="size-4" />
+            Share
+          </Button>
           <Button variant="outline" asChild>
             <a href={openUrl} target="_blank" rel="noreferrer">
               <ExternalLink className="size-4" />
@@ -169,6 +190,14 @@ export const FilePreviewDialog = ({ file, open, onOpenChange }: Props) => {
             </a>
           </Button>
         </div>
+
+        <ShareDialog file={file} open={shareOpen} onOpenChange={setShareOpen} />
+        <VersionsDialog file={file} open={versionsOpen} onOpenChange={setVersionsOpen} />
+        <AddToCollectionDialog
+          file={file}
+          open={collectionOpen}
+          onOpenChange={setCollectionOpen}
+        />
       </DialogContent>
     </Dialog>
   );

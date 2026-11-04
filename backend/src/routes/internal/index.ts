@@ -9,6 +9,9 @@ import storageAccountsRoutes from './storage-accounts.route';
 import { googleCallbackController } from '../../controllers/storage-accounts.controller';
 import adminRoutes from './admin.route';
 import { adminAuthMiddleware } from '../../middlewares/admin-auth.middleware';
+import collectionsRoutes from './collections.route';
+import sharesRoutes from './shares.route';
+import activityRoutes from './activity.route';
 
 const internalRoutes = Router();
 
@@ -16,6 +19,9 @@ internalRoutes.use('/auth', authRoutes);
 internalRoutes.get('/storage-accounts/google/callback', googleCallbackController);
 internalRoutes.use('/files', passportAuthenticateJwt, filesRoutes);
 internalRoutes.use('/upload-jobs', passportAuthenticateJwt, uploadJobsRoutes);
+internalRoutes.use('/collections', passportAuthenticateJwt, collectionsRoutes);
+internalRoutes.use('/shares', passportAuthenticateJwt, sharesRoutes);
+internalRoutes.use('/activity', passportAuthenticateJwt, activityRoutes);
 internalRoutes.use('/analytics', passportAuthenticateJwt, analyticsRoutes);
 internalRoutes.use(
   '/storage-accounts',

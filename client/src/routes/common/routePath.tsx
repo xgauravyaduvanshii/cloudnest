@@ -17,12 +17,15 @@ export const PUBLIC_ROUTES = {
   CONTACT: "/contact",
   SECURITY: "/security",
   ABOUT: "/about",
+  SHARE: "/share/:token",
 };
 
 export const PROTECTED_ROUTES = {
   OVERVIEW: "/overview",
   APIKEYS: "/api-keys",
   FILES: "/files",
+  COLLECTIONS: "/collections",
+  ACTIVITY: "/activity",
   STORAGE_ACCOUNTS: "/storage-accounts",
   ADMIN: "/admin",
   DOCS: "/docs",

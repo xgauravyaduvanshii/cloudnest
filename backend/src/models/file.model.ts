@@ -296,6 +296,42 @@ const FileModel = {
     );
   },
 
+  /**
+   * Return every version in a version group (oldest→newest). Used to render version
+   * history. Only files owned by the requesting user are returned.
+   */
+  async findVersionsByGroup(userId: string, versionGroupId: string) {
+    const result = await query<FileRow>(
+      `SELECT * FROM files
+       WHERE user_id = $1 AND version_group_id = $2
+       ORDER BY version_number ASC, created_at ASC`,
+      [userId, versionGroupId],
+    );
+    return result.rows.map(toFileDocument);
+  },
+
+  /** Highest version number currently in a version group (0 when empty). */
+  async getLatestVersionNumber(userId: string, versionGroupId: string) {
+    const result = await query<{ max: number | null }>(
+      `SELECT MAX(version_number)::int AS max
+       FROM files
+       WHERE user_id = $1 AND version_group_id = $2`,
+      [userId, versionGroupId],
+    );
+    return result.rows[0]?.max ?? 0;
+  },
+
+  /** Clear the latest flag across a version group before promoting another version. */
+  async clearGroupLatest(userId: string, versionGroupId: string, client?: Queryable) {
+    const result = await runQuery(
+      `UPDATE files SET is_latest = FALSE
+       WHERE user_id = $1 AND version_group_id = $2 AND is_latest = TRUE`,
+      [userId, versionGroupId],
+      client,
+    );
+    return result.rowCount || 0;
+  },
+
   async findById(fileId: string) {
     const result = await query<FileRow>(
       `SELECT f.*, sa.display_name AS storage_account_name, fo.name AS folder_name
