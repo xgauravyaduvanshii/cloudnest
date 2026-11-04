@@ -26,6 +26,7 @@ interface StorageAccountRow extends QueryResultRow {
   cached_usage_bytes: number;
   cached_limit_bytes: number | null;
   cached_usage_details: Record<string, unknown>;
+  max_upload_concurrency?: number;
   last_synced_at: Date | null;
   error_message: string | null;
   created_at: Date;
@@ -48,6 +49,7 @@ export interface StorageAccountDocument {
   cachedUsageBytes: number;
   cachedLimitBytes: number | null;
   cachedUsageDetails: Record<string, unknown>;
+  maxUploadConcurrency: number;
   lastSyncedAt: Date | null;
   errorMessage: string | null;
   createdAt: Date;
@@ -81,6 +83,7 @@ const toStorageAccountDocument = (
   cachedUsageBytes: Number(row.cached_usage_bytes),
   cachedLimitBytes: toNumberOrNull(row.cached_limit_bytes),
   cachedUsageDetails: row.cached_usage_details || {},
+  maxUploadConcurrency: Number(row.max_upload_concurrency ?? 3) || 3,
   lastSyncedAt: row.last_synced_at,
   errorMessage: row.error_message,
   createdAt: row.created_at,

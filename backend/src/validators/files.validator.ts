@@ -41,3 +41,10 @@ export const googleDriveMoveItemSchema = z.object({
 export type DeleteFilesSchemaType = z.infer<typeof deleteFilesSchema>;
 export type DownloadFilesSchemaType = z.infer<typeof downloadFilesSchema>;
 export type CreateFolderSchemaType = z.infer<typeof createFolderSchema>;
+
+// ---- Upload jobs (reliable/resumable background uploads) --------------------
+export const jobIdSchema = z.string().uuid('Invalid upload job ID');
+export const uploadJobModeSchema = z.enum(['FLAT', 'PRESERVE_STRUCTURE']);
+export const conflictPolicySchema = z.enum(['SKIP', 'RENAME', 'VERSION']);
+export const clientRequestIdSchema = z.string().trim().min(1).max(255);
+export const providerFolderIdSchema = z.string().min(1).max(255);

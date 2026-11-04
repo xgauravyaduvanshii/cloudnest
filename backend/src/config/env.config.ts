@@ -35,6 +35,11 @@ const envConfig = () => ({
   ),
   ADMIN_EMAIL: getEnv('ADMIN_EMAIL', 'demo@example.com'),
 
+  // Disk temp directory for resumable/streaming upload jobs (multer diskStorage).
+  UPLOAD_TMP_DIR: getEnv('UPLOAD_TMP_DIR', ''),
+  // Per-worker upload concurrency (global cap across all accounts).
+  UPLOAD_WORKER_CONCURRENCY: getEnv('UPLOAD_WORKER_CONCURRENCY', '4'),
+
   LOGTAIL_SOURCE_TOKEN: getEnv('LOGTAIL_SOURCE_TOKEN'),
   LOGTAIL_INGESTING_HOST: getEnv('LOGTAIL_INGESTING_HOST'),
 

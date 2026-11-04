@@ -14,6 +14,7 @@ import internalRoutes from './routes/internal';
 import passport from 'passport';
 import publicRoutes from './routes/public';
 import { logTail } from './config/logtail.config';
+import { startUploadWorker, stopUploadWorker } from './services/upload-jobs.worker';
 
 const app = express();
 
@@ -68,6 +69,10 @@ app.use(errorHandler);
 async function startServer() {
   try {
     await connectDatabase();
+    // In-process, Postgres-backed upload worker. Disabled during tests.
+    if (Env.NODE_ENV !== 'test') {
+      startUploadWorker();
+    }
     const server = app.listen(Env.PORT, () => {
       logger.info(
         `Server listening on port ${Env.PORT} in ${Env.NODE_ENV} mode`,
@@ -81,6 +86,7 @@ async function startServer() {
         logger.warn(`${signal} recieved: shutting down gracefully`);
 
         try {
+          await stopUploadWorker();
           server.close(() => {
             logger.warn('HTTP server closed');
           });

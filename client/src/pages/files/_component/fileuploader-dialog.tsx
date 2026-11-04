@@ -9,8 +9,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { FileUploader, type FileUploaderRef } from "@/components/file-uploader";
-import { useUploadFilesMutation } from "@/features/files/filesAPI";
+import { useCreateUploadJobMutation } from "@/features/uploadJobs/uploadJobsAPI";
+import {
+  ConflictPolicy,
+  UploadJobMode,
+} from "@/features/uploadJobs/uploadJobsType";
 import { StorageProvider } from "@/features/files/filesType";
 import { toast } from "sonner";
 
@@ -37,6 +49,11 @@ const getRelativePath = (file: File) => {
   );
 };
 
+const uuid = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
 export const FileUploaderDialog = (props: {
   children: React.ReactNode;
   folderId?: string | null;
@@ -45,10 +62,13 @@ export const FileUploaderDialog = (props: {
   provider: StorageProvider;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Use File[] directly
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [mode, setMode] = useState<UploadJobMode>("FLAT");
+  const [conflictPolicy, setConflictPolicy] = useState<ConflictPolicy>("SKIP");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileUploaderRef = useRef<FileUploaderRef>(null);
 
-  const [uploadFiles] = useUploadFilesMutation();
+  const [createUploadJob] = useCreateUploadJobMutation();
 
   const handleUploadButtonClick = () => {
     if (selectedFiles.length === 0) {
@@ -56,14 +76,9 @@ export const FileUploaderDialog = (props: {
       return;
     }
 
-    setIsOpen(false);
+    setIsSubmitting(true);
 
     const totalFiles = selectedFiles.length;
-    const toastId = toast.loading(`Uploading ${totalFiles} file(s)...`, {
-      description: "Please wait while we upload your files",
-      duration: Infinity,
-    });
-
     const formData = new FormData();
     formData.append("provider", props.provider);
     if (props.folderId) formData.append("folderId", props.folderId);
@@ -71,37 +86,31 @@ export const FileUploaderDialog = (props: {
       formData.append("providerFolderId", props.providerFolderId);
     if (props.storageAccountId)
       formData.append("storageAccountId", props.storageAccountId);
+    formData.append("mode", mode);
+    formData.append("conflictPolicy", conflictPolicy);
+    formData.append("clientRequestId", uuid());
     selectedFiles.forEach((file) => {
       formData.append("files", file);
       formData.append("relativePaths", getRelativePath(file));
     });
 
-    uploadFiles(formData)
+    createUploadJob(formData)
       .unwrap()
-      .then((res) => {
-        const successCount = res.data.length;
-        const failedCount = res.failedCount || 0;
-        toast.success(
-          `Uploaded ${successCount} file(s) successfully ` +
-            (failedCount > 0 ? `${failedCount} failed` : ""),
-          {
-            id: toastId,
-            description: `Your files are now available`,
-          }
-        );
+      .then(() => {
+        toast.success(`Queued ${totalFiles} file(s) for upload`, {
+          description: "Track progress in the Upload activity panel.",
+        });
+        setIsOpen(false);
+        fileUploaderRef.current?.clearSelectedFiles();
+        setSelectedFiles([]);
       })
       .catch((error) => {
         console.log(error);
-        toast.error("Failed to upload files", {
-          id: toastId,
-          description: "Please try again later",
+        toast.error("Failed to start upload", {
+          description: error?.data?.message || "Please try again later",
         });
       })
-      .finally(() => {
-        toast.dismiss(toastId);
-        fileUploaderRef.current?.clearSelectedFiles();
-        setSelectedFiles([]);
-      });
+      .finally(() => setIsSubmitting(false));
   };
 
   return (
@@ -117,7 +126,7 @@ export const FileUploaderDialog = (props: {
         <div className="py-4 w-full">
           <FileUploader
             ref={fileUploaderRef}
-            onFilesSelected={setSelectedFiles} // Update dialog's state with selected files
+            onFilesSelected={setSelectedFiles}
             maxFileSize={1024 * 1024 * 1024} // 1GB
             allowFolderSelection
             acceptedFileTypes={{
@@ -141,13 +150,57 @@ export const FileUploaderDialog = (props: {
             }}
           />
         </div>
+
+        <div className="grid grid-cols-1 gap-4 pb-2 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">
+              Folder structure
+            </Label>
+            <Select
+              value={mode}
+              onValueChange={(v) => setMode(v as UploadJobMode)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FLAT">
+                  Flat — all files in the target folder
+                </SelectItem>
+                <SelectItem value="PRESERVE_STRUCTURE">
+                  Preserve nested folder structure
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">
+              Name conflicts
+            </Label>
+            <Select
+              value={conflictPolicy}
+              onValueChange={(v) => setConflictPolicy(v as ConflictPolicy)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SKIP">Skip duplicates (default)</SelectItem>
+                <SelectItem value="RENAME">Rename to keep both</SelectItem>
+                <SelectItem value="VERSION">Keep as new version</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="flex justify-end pt-4">
           <Button
             onClick={handleUploadButtonClick}
             className="hover:bg-primay/80 cursor-pointer text-white w-full disabled:opacity-80 disabled:cursor-not-allowed"
-            disabled={selectedFiles.length === 0}
+            disabled={selectedFiles.length === 0 || isSubmitting}
           >
-            Upload
+            {isSubmitting ? "Queuing..." : "Upload"}
           </Button>
         </div>
       </DialogContent>

@@ -1,5 +1,6 @@
 import Navbar from "@/components/navbar";
 import SideBar from "@/components/sidebar";
+import UploadActivity from "@/components/upload-activity";
 import { Outlet } from "react-router-dom";
 
 const AppLayout = () => {
@@ -16,6 +17,7 @@ const AppLayout = () => {
             <Outlet />
           </div>
         </main>
+        <UploadActivity />
       </div>
     </>
   );

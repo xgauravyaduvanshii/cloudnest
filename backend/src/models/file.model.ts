@@ -25,6 +25,14 @@ interface FileRow extends QueryResultRow {
   ext: string;
   upload_via: keyof typeof UploadSourceEnum;
   url: string;
+  checksum_sha256?: string | null;
+  original_path?: string | null;
+  provider_folder_id?: string | null;
+  version_group_id?: string | null;
+  supersedes_file_id?: string | null;
+  version_number?: number;
+  is_latest?: boolean;
+  upload_job_item_id?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -50,6 +58,14 @@ export interface FileDocument {
   ext: string;
   uploadVia: keyof typeof UploadSourceEnum;
   url: string;
+  checksumSha256: string | null;
+  originalPath: string | null;
+  providerFolderId: string | null;
+  versionGroupId: string | null;
+  supersedesFileId: string | null;
+  versionNumber: number;
+  isLatest: boolean;
+  uploadJobItemId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +95,14 @@ const toFileDocument = (row: FileRow): FileDocument => ({
   ext: row.ext,
   uploadVia: row.upload_via,
   url: row.url,
+  checksumSha256: row.checksum_sha256 ?? null,
+  originalPath: row.original_path ?? null,
+  providerFolderId: row.provider_folder_id ?? null,
+  versionGroupId: row.version_group_id ?? null,
+  supersedesFileId: row.supersedes_file_id ?? null,
+  versionNumber: row.version_number ?? 1,
+  isLatest: row.is_latest ?? true,
+  uploadJobItemId: row.upload_job_item_id ?? null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -129,6 +153,14 @@ const FileModel = {
     ext: string;
     uploadVia: keyof typeof UploadSourceEnum;
     url?: string;
+    checksumSha256?: string | null;
+    originalPath?: string | null;
+    providerFolderId?: string | null;
+    versionGroupId?: string | null;
+    supersedesFileId?: string | null;
+    versionNumber?: number;
+    isLatest?: boolean;
+    uploadJobItemId?: string | null;
   }) {
     const result = await query<FileRow>(
       `INSERT INTO files (
@@ -144,9 +176,17 @@ const FileModel = {
         size,
         ext,
         upload_via,
-        url
+        url,
+        checksum_sha256,
+        original_path,
+        provider_folder_id,
+        version_group_id,
+        supersedes_file_id,
+        version_number,
+        is_latest,
+        upload_job_item_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
       RETURNING *`,
       [
         data.userId,
@@ -162,9 +202,98 @@ const FileModel = {
         data.ext,
         data.uploadVia,
         data.url || '',
+        data.checksumSha256 || null,
+        data.originalPath || null,
+        data.providerFolderId || null,
+        data.versionGroupId || null,
+        data.supersedesFileId || null,
+        data.versionNumber ?? 1,
+        data.isLatest ?? true,
+        data.uploadJobItemId || null,
       ],
     );
     return toFileDocument(result.rows[0]);
+  },
+
+  /**
+   * Find an existing latest file that is an exact duplicate: same user, account,
+   * target folder, normalized name, and checksum. Used to skip redundant uploads.
+   */
+  async findExactDuplicate(data: {
+    userId: string;
+    storageAccountId: string;
+    providerFolderId?: string | null;
+    originalName: string;
+    checksumSha256: string;
+  }) {
+    const result = await query<FileRow>(
+      `SELECT * FROM files
+       WHERE user_id = $1
+         AND storage_account_id = $2
+         AND COALESCE(provider_folder_id, '') = $3
+         AND LOWER(original_name) = LOWER($4)
+         AND checksum_sha256 = $5
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [
+        data.userId,
+        data.storageAccountId,
+        data.providerFolderId || '',
+        data.originalName,
+        data.checksumSha256,
+      ],
+    );
+    return result.rows[0] ? toFileDocument(result.rows[0]) : null;
+  },
+
+  /**
+   * Find the current latest file with the same name in a target folder (any checksum),
+   * used to establish version lineage when conflict policy is VERSION.
+   */
+  async findLatestByName(data: {
+    userId: string;
+    storageAccountId: string;
+    providerFolderId?: string | null;
+    originalName: string;
+  }) {
+    const result = await query<FileRow>(
+      `SELECT * FROM files
+       WHERE user_id = $1
+         AND storage_account_id = $2
+         AND COALESCE(provider_folder_id, '') = $3
+         AND LOWER(original_name) = LOWER($4)
+         AND is_latest = TRUE
+       ORDER BY version_number DESC, created_at DESC
+       LIMIT 1`,
+      [
+        data.userId,
+        data.storageAccountId,
+        data.providerFolderId || '',
+        data.originalName,
+      ],
+    );
+    return result.rows[0] ? toFileDocument(result.rows[0]) : null;
+  },
+
+  /**
+   * Mark a file (and its version group) as no longer the latest, and link a new
+   * version into that group. Returns the number of rows superseded.
+   */
+  async markNotLatest(fileId: string, client?: Queryable) {
+    const result = await runQuery(
+      `UPDATE files SET is_latest = FALSE WHERE id = $1`,
+      [fileId],
+      client,
+    );
+    return result.rowCount || 0;
+  },
+
+  async setVersionGroup(fileId: string, versionGroupId: string, client?: Queryable) {
+    await runQuery(
+      `UPDATE files SET version_group_id = $2 WHERE id = $1`,
+      [fileId, versionGroupId],
+      client,
+    );
   },
 
   async findById(fileId: string) {

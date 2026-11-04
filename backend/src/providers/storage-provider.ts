@@ -8,9 +8,28 @@ export interface ProviderUploadResult {
   metadata: Record<string, unknown>;
 }
 
+/**
+ * Upload source accepted by providers.
+ * Supports an in-memory buffer (legacy multer memoryStorage) or a disk temp
+ * file path (multer diskStorage) so large files can be streamed instead of
+ * fully buffered. Express.Multer.File is assignable to this shape.
+ */
+export interface ProviderUploadFile {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer?: Buffer;
+  path?: string;
+}
+
+export type ProviderUploadInput = Express.Multer.File | ProviderUploadFile;
+
+export type ProviderUploadMode = 'FLAT' | 'PRESERVE_STRUCTURE';
+
 export interface ProviderUploadOptions {
   folderPath?: string[];
   providerFolderId?: string | null;
+  mode?: ProviderUploadMode;
 }
 
 export interface ProviderReadResult {
@@ -56,7 +75,7 @@ export interface StorageProvider {
   upload(
     account: StorageAccountDocument,
     userId: string,
-    file: Express.Multer.File,
+    file: ProviderUploadInput,
     options?: ProviderUploadOptions,
   ): Promise<ProviderUploadResult>;
   ensureFolder?(

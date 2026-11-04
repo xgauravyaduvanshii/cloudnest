@@ -10,7 +10,12 @@ import StorageAccountModel, {
 } from '../models/storage-account.model';
 import { decryptJson } from '../utils/crypto';
 import { BadRequestException } from '../utils/app-error';
-import { ProviderUploadOptions, StorageProvider } from './storage-provider';
+import {
+  ProviderUploadFile,
+  ProviderUploadInput,
+  ProviderUploadOptions,
+  StorageProvider,
+} from './storage-provider';
 
 interface TelegramAccountCredentials {
   session: string;
@@ -64,16 +69,17 @@ export class TelegramStorageProvider implements StorageProvider {
   async upload(
     account: StorageAccountDocument,
     userId: string,
-    file: Express.Multer.File,
+    file: ProviderUploadInput,
     options: ProviderUploadOptions = {},
   ) {
     const client = await this.getClient(account);
-    const toUpload = new CustomFile(
-      file.originalname,
-      file.size,
-      '',
-      file.buffer,
-    );
+    // Prefer a disk temp path (streams large files without full buffering);
+    // fall back to the in-memory buffer for legacy memoryStorage uploads.
+    const source = file as ProviderUploadFile;
+    const toUpload =
+      typeof source.path === 'string' && source.path.length > 0
+        ? new CustomFile(file.originalname, file.size, source.path)
+        : new CustomFile(file.originalname, file.size, '', source.buffer);
 
     try {
       const message = await client.sendFile('me', {

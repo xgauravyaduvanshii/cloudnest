@@ -15,13 +15,18 @@ import FileModel, { FileDocument } from '../models/file.model';
 import StorageAccountModel, {
   StorageAccountDocument,
 } from '../models/storage-account.model';
-import { ProviderUploadOptions, StorageProvider } from './storage-provider';
+import { getUploadStream } from '../utils/upload-source';
+import {
+  ProviderUploadInput,
+  ProviderUploadOptions,
+  StorageProvider,
+} from './storage-provider';
 
 export class S3StorageProvider implements StorageProvider {
   async upload(
     account: StorageAccountDocument,
     userId: string,
-    file: Express.Multer.File,
+    file: ProviderUploadInput,
     options: ProviderUploadOptions = {},
   ) {
     const ext = path.extname(file.originalname);
@@ -36,7 +41,7 @@ export class S3StorageProvider implements StorageProvider {
     const command = new PutObjectCommand({
       Bucket: Env.AWS_S3_BUCKET!,
       Key: storageKey,
-      Body: file.buffer,
+      Body: getUploadStream(file),
     });
 
     await s3.send(command);

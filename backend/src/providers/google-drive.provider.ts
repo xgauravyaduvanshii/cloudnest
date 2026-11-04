@@ -8,10 +8,15 @@ import StorageAccountModel, {
 } from '../models/storage-account.model';
 import { decryptJson, encryptJson } from '../utils/crypto';
 import { BadRequestException } from '../utils/app-error';
+import { logger } from '../utils/logger';
+import { getUploadStream } from '../utils/upload-source';
+import DriveFolderCacheModel from '../models/drive-folder-cache.model';
+import { classifyDriveError } from './provider-error';
 import {
   ProviderItem,
   ProviderListOptions,
   StorageProvider,
+  ProviderUploadInput,
   ProviderUploadOptions,
 } from './storage-provider';
 
@@ -70,91 +75,72 @@ const refreshInProgress = new Map<string, Promise<void>>();
 
 export class GoogleDriveStorageProvider implements StorageProvider {
   /**
-   * Wrapper function that handles authentication errors and retries operations after forcing token refresh.
-   * 
-   * @param account - The storage account document
-   * @param operation - Callback function that performs the Drive API operation
-   * @returns The result of the operation
-   * 
-   * This wrapper:
-   * - Executes the provided callback
-   * - Catches GaxiosError with status 401 or 403 (authentication errors)
-   * - On auth error, forces token refresh by clearing cached credentials
-   * - Retries the callback once after refresh
-   * - Only retries once to avoid infinite loops
-   * - Logs retry attempts for debugging
-   * - Non-auth errors (404, 500, etc.) skip retry and propagate immediately
+   * Wrapper that retries an operation once after forcing a token refresh, but ONLY
+   * for genuine authentication errors (401, or a 403 whose reason is auth-related).
+   *
+   * Rate-limit (429 / rateLimitExceeded / userRateLimitExceeded) and quota errors are
+   * deliberately NOT treated as auth failures: clearing the cached access token for
+   * them would force needless refreshes and could invalidate healthy credentials. Those
+   * errors bubble up unchanged so the upload worker can apply exponential backoff + jitter
+   * and honor Retry-After. Non-retryable client errors (404, etc.) also bubble up.
    */
   private async executeWithAuthRetry<T>(
     account: StorageAccountDocument,
     operation: () => Promise<T>,
   ): Promise<T> {
     try {
-      // First attempt: execute the operation
       return await operation();
     } catch (error: any) {
-      // Check if this is an authentication error (401 or 403)
-      const isAuthError = 
-        error.response?.status === 401 || 
-        error.response?.status === 403;
-      
-      if (!isAuthError) {
-        // Non-auth errors propagate immediately without retry
+      const classified = classifyDriveError(error);
+
+      // Only authentication errors warrant clearing cached tokens and refreshing.
+      if (classified.kind !== 'AUTH') {
         throw error;
       }
-      
-      // Log the authentication error and retry attempt
-      console.warn(
-        `Authentication error (${error.response?.status}) for Google Drive account ${account._id}. ` +
-        `Forcing token refresh and retrying operation...`
+
+      logger.warn(
+        `Authentication error (${classified.status}) for Google Drive account ${account._id}. ` +
+          `Forcing token refresh and retrying operation once...`,
       );
-      
-      // Force token refresh by clearing the cached credentials in the auth client
-      // This will trigger a fresh token refresh on the next getDrive() call
+
+      // Force token refresh by clearing the cached credentials in the auth client.
+      // The next getDrive() call will detect expired/missing tokens and refresh.
       const accountId = account._id.toString();
       refreshInProgress.delete(accountId);
-      
-      // Mark credentials as needing refresh by clearing in-memory cache
-      // The next getDrive() call will detect expired/missing tokens and refresh
+
       if (account.encryptedCredentials) {
         const credentials = decryptJson<GoogleAccountCredentials>(
           account.encryptedCredentials,
         );
-        // Clear the access token to force refresh
         credentials.accessToken = undefined;
         credentials.expiryDate = undefined;
-        
-        // Update the database to force refresh on next call
+
         try {
           const encryptedCredentials = encryptJson({
             refreshToken: credentials.refreshToken,
             // accessToken and expiryDate intentionally omitted to force refresh
           });
-          
+
           await StorageAccountModel.updateCredentials(account.id, {
             encryptedCredentials,
           });
-          
-          console.log(
-            `Cleared cached tokens for account ${account._id} to force refresh`
+
+          logger.info(
+            `Cleared cached tokens for account ${account._id} to force refresh`,
           );
         } catch (dbError: any) {
-          console.error(
-            `Failed to clear cached tokens for account ${account._id}:`,
-            dbError.message,
+          logger.error(
+            `Failed to clear cached tokens for account ${account._id}: ${dbError?.message}`,
           );
         }
       }
-      
-      // Retry the operation once after forcing token refresh
+
+      // Retry the operation once after forcing token refresh (no further retries).
       try {
-        console.log(`Retrying operation after token refresh for account ${account._id}`);
         return await operation();
       } catch (retryError: any) {
-        // If retry also fails, throw the error (no further retries to avoid loops)
-        console.error(
-          `Retry failed for Google Drive account ${account._id} after token refresh:`,
-          retryError.message
+        logger.error(
+          `Retry failed for Google Drive account ${account._id} after token refresh: ${retryError?.message}`,
         );
         throw retryError;
       }
@@ -205,7 +191,9 @@ export class GoogleDriveStorageProvider implements StorageProvider {
             )
           ]);
         } catch (error: any) {
-          console.error(`Error waiting for existing refresh for account ${accountId}:`, error.message);
+          logger.error(
+            `Error waiting for existing refresh for account ${accountId}: ${error?.message}`,
+          );
         }
         
         // After waiting, reload credentials from database to get the refreshed tokens
@@ -252,18 +240,17 @@ export class GoogleDriveStorageProvider implements StorageProvider {
               });
               
               // Log successful credential update for audit trail
-              console.log(`Token refreshed and stored for Google Drive account ${account._id}`);
+              logger.info(`Token refreshed and stored for Google Drive account ${account._id}`);
             } catch (dbError: any) {
               // Log database update failures but don't fail the request
               // The refreshed token is still valid in memory for this request
-              console.error(
-                `Failed to store refreshed credentials for account ${account._id}:`,
-                dbError.message,
+              logger.error(
+                `Failed to store refreshed credentials for account ${account._id}: ${dbError?.message}`,
               );
             }
           } catch (error: any) {
             // Handle token refresh failures
-            console.error(`Failed to refresh token for account ${account._id}:`, error.message);
+            logger.error(`Failed to refresh token for account ${account._id}: ${error?.message}`);
             
             // Re-throw with context for upstream error handling
             if (error.response?.data?.error === 'invalid_grant') {
@@ -321,40 +308,50 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   private async ensureDriveFolder(
     drive: ReturnType<typeof google.drive>,
     name: string,
-    parentId?: string | null,
+    parentId: string | null | undefined,
+    account: StorageAccountDocument,
   ) {
     const escapedName = this.escapeDriveQuery(name);
     const parent = parentId || 'root';
-    const response = await drive.files.list({
-      q: [
-        "mimeType = 'application/vnd.google-apps.folder'",
-        `name = '${escapedName}'`,
-        'trashed = false',
-        `'${parent}' in parents`,
-      ].join(' and '),
-      fields: 'files(id,name)',
-      pageSize: 1,
-      spaces: 'drive',
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true,
-    });
+    // Race-safe: consult the cache and serialize creation with an advisory lock so
+    // concurrent uploads/workers never create duplicate folders of the same name.
+    return DriveFolderCacheModel.ensure({
+      storageAccountId: account.id,
+      parentFolderId: parent,
+      name,
+      createRemote: async () => {
+        const response = await drive.files.list({
+          q: [
+            "mimeType = 'application/vnd.google-apps.folder'",
+            `name = '${escapedName}'`,
+            'trashed = false',
+            `'${parent}' in parents`,
+          ].join(' and '),
+          fields: 'files(id,name)',
+          pageSize: 1,
+          spaces: 'drive',
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+        });
 
-    const existingId = response.data.files?.[0]?.id;
-    if (existingId) return existingId;
+        const existingId = response.data.files?.[0]?.id;
+        if (existingId) return existingId;
 
-    const created = await drive.files.create({
-      requestBody: {
-        name,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [parent],
+        const created = await drive.files.create({
+          requestBody: {
+            name,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parent],
+          },
+          fields: 'id,name',
+          supportsAllDrives: true,
+        });
+        if (!created.data.id) {
+          throw new BadRequestException('Google Drive did not return a folder ID');
+        }
+        return created.data.id;
       },
-      fields: 'id,name',
-      supportsAllDrives: true,
     });
-    if (!created.data.id) {
-      throw new BadRequestException('Google Drive did not return a folder ID');
-    }
-    return created.data.id;
   }
 
   private async ensureFolderPath(
@@ -369,8 +366,8 @@ export class GoogleDriveStorageProvider implements StorageProvider {
     for (const rawName of folderPath) {
       const name = rawName.trim();
       if (!name) continue;
-      parentId = await this.ensureDriveFolder(drive, name, parentId);
-      createdPath.push({ name, id: parentId });
+      parentId = await this.ensureDriveFolder(drive, name, parentId, account);
+      createdPath.push({ name, id: parentId! });
     }
 
     return {
@@ -395,17 +392,34 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   async upload(
     account: StorageAccountDocument,
     userId: string,
-    file: Express.Multer.File,
+    file: ProviderUploadInput,
     options: ProviderUploadOptions = {},
   ) {
     return this.executeWithAuthRetry(account, async () => {
-      const folder = await this.ensureFolderPath(
-        account,
-        options.folderPath || [],
-        options.providerFolderId || null,
-      );
-      const drive = folder.drive;
-      const parentId = folder.folderId || options.providerFolderId || account.rootFolderId;
+      const baseFolderId = options.providerFolderId || account.rootFolderId || null;
+      // FLAT drops every file into the single selected folder and must never create a
+      // new folder of the same name. PRESERVE_STRUCTURE (and the legacy path) recreates
+      // the given relative folder chain only *inside* the selected base folder.
+      const shouldEnsureSubfolders =
+        options.mode !== 'FLAT' && (options.folderPath?.length ?? 0) > 0;
+
+      let drive: ReturnType<typeof google.drive>;
+      let parentId: string | null = baseFolderId;
+      let folderPathInfo: { name: string; id: string }[] = [];
+
+      if (shouldEnsureSubfolders) {
+        const ensured = await this.ensureFolderPath(
+          account,
+          options.folderPath || [],
+          baseFolderId,
+        );
+        drive = ensured.drive;
+        parentId = ensured.folderId || baseFolderId;
+        folderPathInfo = ensured.path;
+      } else {
+        drive = await this.getDrive(account);
+      }
+
       const response = await drive.files.create({
         requestBody: {
           name: file.originalname,
@@ -413,7 +427,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
         },
         media: {
           mimeType: file.mimetype,
-          body: Readable.from(file.buffer),
+          body: getUploadStream(file),
         },
         fields: 'id,name,mimeType,size,webViewLink,webContentLink',
         supportsAllDrives: true,
@@ -434,7 +448,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
           webViewLink: response.data.webViewLink,
           webContentLink: response.data.webContentLink,
           folderId: parentId || null,
-          folderPath: folder.path,
+          folderPath: folderPathInfo,
         },
       };
     });
