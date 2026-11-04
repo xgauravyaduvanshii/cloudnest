@@ -1,6 +1,7 @@
 import Navbar from "@/components/navbar";
 import SideBar from "@/components/sidebar";
 import UploadActivity from "@/components/upload-activity";
+import AiPanel from "@/components/ai-panel";
 import { Outlet } from "react-router-dom";
 
 const AppLayout = () => {
@@ -18,6 +19,7 @@ const AppLayout = () => {
           </div>
         </main>
         <UploadActivity />
+        <AiPanel />
       </div>
     </>
   );

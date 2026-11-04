@@ -47,6 +47,17 @@ const envConfig = () => ({
     'ALLOWED_ORIGINS',
     'https://cloudnest.vercel.app',
   ),
+
+  // ---- AI (Phase 3). Keys are server-side only and never sent to the client. ----
+  // Provider is any OpenAI-compatible endpoint (OpenAI, Groq, Together, Ollama, ...).
+  AI_ENABLED: getEnv('AI_ENABLED', 'false'),
+  AI_PROVIDER: getEnv('AI_PROVIDER', 'openai'),
+  AI_API_KEY: getEnv('AI_API_KEY', ''),
+  AI_BASE_URL: getEnv('AI_BASE_URL', 'https://api.openai.com/v1'),
+  AI_MODEL: getEnv('AI_MODEL', 'gpt-4o-mini'),
+  AI_VISION_MODEL: getEnv('AI_VISION_MODEL', 'gpt-4o-mini'),
+  AI_EMBEDDING_MODEL: getEnv('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
+  AI_MAX_OUTPUT_TOKENS: getEnv('AI_MAX_OUTPUT_TOKENS', '1024'),
 });
 
 export const Env = envConfig();

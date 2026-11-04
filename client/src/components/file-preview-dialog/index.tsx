@@ -8,7 +8,9 @@ import {
   History,
   Loader2,
   Share2,
+  Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +19,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FileType } from "@/features/files/filesType";
 import { getCleanAssetType } from "@/lib/format-utils";
+import {
+  useEnrichFileMutation,
+  useGetFileMetadataQuery,
+} from "@/features/ai/aiAPI";
 import { ShareDialog } from "@/components/file-actions/share-dialog";
 import { VersionsDialog } from "@/components/file-actions/versions-dialog";
 import { AddToCollectionDialog } from "@/components/file-actions/add-to-collection-dialog";
@@ -40,6 +47,21 @@ export const FilePreviewDialog = ({ file, open, onOpenChange }: Props) => {
   const [shareOpen, setShareOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [enrichFile, { isLoading: isEnriching }] = useEnrichFileMutation();
+  const { data: metadata } = useGetFileMetadataQuery(file?._id ?? "", {
+    skip: !file?._id,
+  });
+
+  const runEnrich = async () => {
+    if (!file) return;
+    try {
+      const res = await enrichFile({ fileId: file._id }).unwrap();
+      if (res.disabled) toast.info("AI is not enabled on this server");
+      else toast.success("Analyzed. Metadata updated.");
+    } catch {
+      toast.error("Analysis failed");
+    }
+  };
 
   useEffect(() => {
     if (!open || !file || !isTextPreview(file)) {
@@ -164,7 +186,31 @@ export const FilePreviewDialog = ({ file, open, onOpenChange }: Props) => {
             )}
         </div>
 
+        {metadata?.metadata && (metadata.metadata.summary || metadata.metadata.tags?.length) && (
+          <div className="border-t px-5 py-3 text-sm">
+            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Sparkles className="size-3" /> AI metadata
+            </div>
+            {metadata.metadata.summary && (
+              <p className="text-xs text-muted-foreground">{metadata.metadata.summary}</p>
+            )}
+            {metadata.metadata.tags?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {metadata.metadata.tags.map((t) => (
+                  <Badge key={t} variant="secondary" className="text-[10px]">
+                    {t}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-end gap-2 border-t px-5 py-3">
+          <Button variant="outline" onClick={runEnrich} disabled={isEnriching}>
+            {isEnriching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+            Analyze
+          </Button>
           <Button variant="outline" onClick={() => setCollectionOpen(true)}>
             <FolderPlus className="size-4" />
             Collection

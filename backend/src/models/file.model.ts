@@ -437,6 +437,23 @@ const FileModel = {
     return result.rows.map(toFileDocument);
   },
 
+  /** Global (all folders) latest-version filename search used by AI smart search. */
+  async searchNamesByUser(userId: string, keyword: string, limit: number) {
+    const result = await query<FileRow>(
+      `SELECT f.*, sa.display_name AS storage_account_name, fo.name AS folder_name
+       FROM files f
+       LEFT JOIN storage_accounts sa ON sa.id = f.storage_account_id
+       LEFT JOIN folders fo ON fo.id = f.folder_id
+       WHERE f.user_id = $1
+         AND f.is_latest = TRUE
+         AND f.original_name ILIKE $2
+       ORDER BY f.created_at DESC
+       LIMIT $3`,
+      [userId, `%${keyword}%`, limit],
+    );
+    return result.rows.map(toFileDocument);
+  },
+
   async deleteByIdsForUser(
     fileIds: string[],
     userId: string,

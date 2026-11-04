@@ -12,6 +12,7 @@ import { adminAuthMiddleware } from '../../middlewares/admin-auth.middleware';
 import collectionsRoutes from './collections.route';
 import sharesRoutes from './shares.route';
 import activityRoutes from './activity.route';
+import aiRoutes from './ai.route';
 
 const internalRoutes = Router();
 
@@ -22,6 +23,7 @@ internalRoutes.use('/upload-jobs', passportAuthenticateJwt, uploadJobsRoutes);
 internalRoutes.use('/collections', passportAuthenticateJwt, collectionsRoutes);
 internalRoutes.use('/shares', passportAuthenticateJwt, sharesRoutes);
 internalRoutes.use('/activity', passportAuthenticateJwt, activityRoutes);
+internalRoutes.use('/ai', passportAuthenticateJwt, aiRoutes);
 internalRoutes.use('/analytics', passportAuthenticateJwt, analyticsRoutes);
 internalRoutes.use(
   '/storage-accounts',
