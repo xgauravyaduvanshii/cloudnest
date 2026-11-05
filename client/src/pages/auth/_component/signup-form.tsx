@@ -36,10 +36,10 @@ const SignUpForm = () => {
   const onSubmit = (values: FormValues) => {
     register(values)
       .unwrap()
-      .then(() => {
+      .then((data) => {
         form.reset();
-        toast.success("Sign up successful");
-        navigate(AUTH_ROUTES.SIGN_IN);
+        toast.success("Account created. Check your email for the verification code.");
+        navigate(AUTH_ROUTES.VERIFY_EMAIL, { state: { email: data.email || values.email } });
       })
       .catch((error) => {
         console.log(error);

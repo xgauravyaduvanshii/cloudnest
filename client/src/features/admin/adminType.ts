@@ -28,6 +28,7 @@ export interface AdminUser {
   role: "USER" | "ADMIN";
   status: "ACTIVE" | "DISABLED";
   profilePicture: string | null;
+  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -123,4 +124,78 @@ export interface AdminAiModelsFetchResponse {
   message: string;
   fetched: number;
   inserted: number;
+}
+
+// ---------------------------------------------------------------- Email system
+
+export interface SmtpConfig {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string | null;
+  hasPassword: boolean;
+  maskedPassword: string | null;
+  fromName: string | null;
+  fromAddress: string;
+  replyTo: string | null;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface AdminSmtpListResponse {
+  message: string;
+  configs: SmtpConfig[];
+}
+
+export interface SmtpConfigPayload {
+  name: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  username?: string | null;
+  password?: string | null;
+  fromName?: string | null;
+  fromAddress: string;
+  replyTo?: string | null;
+}
+
+export interface EmailTemplate {
+  id: string;
+  key: string;
+  name: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string;
+  description: string | null;
+  variables: string[];
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminEmailTemplatesResponse {
+  message: string;
+  templates: EmailTemplate[];
+}
+
+export interface EmailTemplatePayload {
+  key: string;
+  name: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string;
+  description?: string | null;
+  variables?: string[];
+  isEnabled?: boolean;
+}
+
+export type TemplateVars = Record<string, string | number>;
+
+export interface BroadcastResponse {
+  message: string;
+  total: number;
+  sent: number;
+  failed: number;
 }

@@ -5,6 +5,35 @@ export interface RegisterPayloadType {
     password: string;
 }
 
+export interface RegisterResponseType {
+    message: string;
+    email: string;
+    pendingVerification: boolean;
+    expiresMinutes?: number;
+}
+
+export interface VerifyOtpPayloadType {
+    email: string;
+    code: string;
+}
+
+export interface ResendOtpPayloadType {
+    email: string;
+}
+
+export interface ForgotPasswordPayloadType {
+    email: string;
+}
+
+export interface ResetPasswordPayloadType {
+    token: string;
+    password: string;
+}
+
+export interface MagicLinkVerifyPayloadType {
+    token: string;
+}
+
 export interface LoginPayloadType {
     email: string;
     password: string;

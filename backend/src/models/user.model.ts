@@ -10,6 +10,7 @@ interface UserRow extends QueryResultRow {
   profile_picture: string | null;
   role: UserRole;
   status: UserStatus;
+  email_verified: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -25,6 +26,7 @@ export interface UserDocument {
   profilePicture: string | null;
   role: UserRole;
   status: UserStatus;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(value: string): Promise<boolean>;
@@ -54,6 +56,7 @@ const toUserDocument = (row: UserRow): UserDocument => ({
   profilePicture: row.profile_picture,
   role: row.role,
   status: row.status,
+  emailVerified: !!row.email_verified,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   comparePassword(value: string) {
@@ -197,6 +200,52 @@ const UserModel = {
        WHERE id = $${params.length}
        RETURNING *`,
       params,
+      client,
+    );
+    return result.rows[0] ? toUserDocument(result.rows[0]) : null;
+  },
+
+  /**
+   * Verified, active recipients for an admin email broadcast.
+   * 'ALL' -> every user, 'USER'/'ADMIN' -> that role only.
+   */
+  async findEmailRecipients(
+    audience: 'ALL' | 'USER' | 'ADMIN',
+  ): Promise<{ id: string; name: string; email: string }[]> {
+    const where =
+      audience === 'ALL'
+        ? `WHERE status = 'ACTIVE' AND email_verified = TRUE`
+        : `WHERE status = 'ACTIVE' AND email_verified = TRUE AND role = $1`;
+    const result = await query<UserRow>(
+      `SELECT id, name, email FROM users ${where} ORDER BY created_at ASC`,
+      audience === 'ALL' ? [] : [audience],
+    );
+    return result.rows.map((r) => ({ id: r.id, name: r.name, email: r.email }));
+  },
+
+  async setEmailVerified(
+    userId: string,
+    verified: boolean,
+    client?: Queryable,
+  ) {
+    const result = await runQuery<UserRow>(
+      `UPDATE users
+       SET email_verified = $2
+       WHERE id = $1
+       RETURNING *`,
+      [userId, verified],
+      client,
+    );
+    return result.rows[0] ? toUserDocument(result.rows[0]) : null;
+  },
+
+  async updatePassword(userId: string, hashedPassword: string, client?: Queryable) {
+    const result = await runQuery<UserRow>(
+      `UPDATE users
+       SET password = $2
+       WHERE id = $1
+       RETURNING *`,
+      [userId, hashedPassword],
       client,
     );
     return result.rows[0] ? toUserDocument(result.rows[0]) : null;

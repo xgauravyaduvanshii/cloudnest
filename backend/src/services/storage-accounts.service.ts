@@ -27,6 +27,32 @@ import { getStorageProvider } from '../providers';
 import { classifyDriveError } from '../providers/provider-error';
 import { ErrorCodeEnum } from '../enums/error-code.enum';
 import { logger } from '../utils/logger';
+import UserModel from '../models/user.model';
+import { queueTemplate } from './mail.service';
+
+/**
+ * Best-effort provider lifecycle email. Resolves the owning user's name/email and
+ * fire-and-forgets the template. Never throws and never blocks the main flow.
+ */
+const notifyProviderEmail = async (
+  userId: string | null,
+  templateKey: 'provider_connected' | 'provider_reconnect_required',
+  providerName: string,
+) => {
+  if (!userId) return;
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) return;
+    queueTemplate(templateKey, user.email, {
+      userName: user.name,
+      providerName,
+      accountUrl: `${Env.CLIENT_URL}/storage-accounts`,
+    });
+  } catch (error) {
+    logger.error('Failed to prepare provider notification email', error);
+  }
+};
+
 
 type GoogleState = {
   userId: string;
@@ -320,6 +346,13 @@ export const syncStorageAccountService = async (
         'ERROR',
         error instanceof Error ? error.message : 'Unknown sync error',
       );
+      if (account.ownerType === 'USER') {
+        await notifyProviderEmail(
+          account.userId,
+          'provider_reconnect_required',
+          account.provider,
+        );
+      }
     }
     throw error;
   }
@@ -450,6 +483,10 @@ export const handleGoogleCallbackService = async (
     },
   });
 
+  if (decoded.ownerType === 'USER') {
+    await notifyProviderEmail(decoded.userId, 'provider_connected', 'Google Drive');
+  }
+
   return account;
 };
 
@@ -526,6 +563,12 @@ const createTelegramStorageAccount = async (
       source: 'app_files',
     },
   });
+
+  await notifyProviderEmail(
+    pending.ownerType === 'USER' ? pending.userId : null,
+    'provider_connected',
+    'Telegram',
+  );
 
   await pending.client.disconnect();
   return account;

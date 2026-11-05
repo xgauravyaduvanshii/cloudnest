@@ -61,6 +61,24 @@ const envConfig = () => ({
   AI_VISION_MODEL: getEnv('AI_VISION_MODEL', 'gpt-4o-mini'),
   AI_EMBEDDING_MODEL: getEnv('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
   AI_MAX_OUTPUT_TOKENS: getEnv('AI_MAX_OUTPUT_TOKENS', '1024'),
+
+  // ---- Transactional email (Phase 7). ----
+  // SMTP settings are stored in the database at runtime and take priority.
+  // These env values are a fallback so email works before an admin configures SMTP.
+  SMTP_HOST: getEnv('SMTP_HOST', ''),
+  SMTP_PORT: getEnv('SMTP_PORT', '587'),
+  SMTP_SECURE: getEnv('SMTP_SECURE', 'false'),
+  SMTP_USERNAME: getEnv('SMTP_USERNAME', ''),
+  SMTP_PASSWORD: getEnv('SMTP_PASSWORD', ''),
+  SMTP_FROM_NAME: getEnv('SMTP_FROM_NAME', 'CloudNest'),
+  SMTP_FROM_ADDRESS: getEnv('SMTP_FROM_ADDRESS', ''),
+  SMTP_REPLY_TO: getEnv('SMTP_REPLY_TO', ''),
+
+  // How long a signup OTP / password-reset / magic link stays valid, in minutes.
+  OTP_TTL_MINUTES: getEnv('OTP_TTL_MINUTES', '15'),
+  MAGIC_LINK_TTL_MINUTES: getEnv('MAGIC_LINK_TTL_MINUTES', '15'),
+  PASSWORD_RESET_TTL_MINUTES: getEnv('PASSWORD_RESET_TTL_MINUTES', '30'),
+  SUPPORT_EMAIL: getEnv('SUPPORT_EMAIL', ''),
 });
 
 export const Env = envConfig();

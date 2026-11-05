@@ -11,6 +11,14 @@ import {
   AdminStorageAccountsResponse,
   AdminStorageStatusPayload,
   AdminUsersResponse,
+  AdminSmtpListResponse,
+  AdminEmailTemplatesResponse,
+  SmtpConfig,
+  SmtpConfigPayload,
+  EmailTemplate,
+  EmailTemplatePayload,
+  TemplateVars,
+  BroadcastResponse,
 } from "./adminType";
 import { StorageAccount } from "../storageAccounts/storageAccountsType";
 
@@ -180,6 +188,110 @@ export const adminApi = apiClient.injectEndpoints({
       query: (id) => ({ url: `/admin/ai-models/${id}`, method: "DELETE" }),
       invalidatesTags: ["admin", "ai"],
     }),
+
+    // ------------------------------------------------------ SMTP configuration
+    getAdminSmtp: builder.query<AdminSmtpListResponse, void>({
+      query: () => ({ url: "/admin/smtp", method: "GET" }),
+      providesTags: ["email", "admin"],
+    }),
+    createAdminSmtp: builder.mutation<{ message: string; config: SmtpConfig }, SmtpConfigPayload>({
+      query: (body) => ({ url: "/admin/smtp", method: "POST", body }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    updateAdminSmtp: builder.mutation<
+      { message: string; config: SmtpConfig },
+      { id: string } & Partial<SmtpConfigPayload>
+    >({
+      query: ({ id, ...body }) => ({ url: `/admin/smtp/${id}`, method: "PUT", body }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    deleteAdminSmtp: builder.mutation<{ message: string }, string>({
+      query: (id) => ({ url: `/admin/smtp/${id}`, method: "DELETE" }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    activateAdminSmtp: builder.mutation<{ message: string; config: SmtpConfig }, string>({
+      query: (id) => ({ url: `/admin/smtp/${id}/activate`, method: "POST" }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    testAdminSmtpConnection: builder.mutation<{ message: string; ok: boolean }, string>({
+      query: (id) => ({ url: `/admin/smtp/${id}/test`, method: "POST" }),
+    }),
+    smtpTestSend: builder.mutation<
+      { message: string; sent: boolean },
+      { to: string; templateKey: string; configId?: string; vars?: TemplateVars }
+    >({
+      query: (body) => ({ url: "/admin/smtp/test-send", method: "POST", body }),
+    }),
+
+    // --------------------------------------------------------- email templates
+    getAdminEmailTemplates: builder.query<AdminEmailTemplatesResponse, void>({
+      query: () => ({ url: "/admin/email-templates", method: "GET" }),
+      providesTags: ["email", "admin"],
+    }),
+    createAdminEmailTemplate: builder.mutation<
+      { message: string; template: EmailTemplate },
+      EmailTemplatePayload
+    >({
+      query: (body) => ({ url: "/admin/email-templates", method: "POST", body }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    updateAdminEmailTemplate: builder.mutation<
+      { message: string; template: EmailTemplate },
+      { id: string; data: Partial<EmailTemplatePayload> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/admin/email-templates/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    setEmailTemplateEnabled: builder.mutation<
+      { message: string; template: EmailTemplate },
+      { id: string; isEnabled: boolean }
+    >({
+      query: ({ id, isEnabled }) => ({
+        url: `/admin/email-templates/${id}`,
+        method: "PATCH",
+        body: { isEnabled },
+      }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    deleteAdminEmailTemplate: builder.mutation<{ message: string }, string>({
+      query: (id) => ({ url: `/admin/email-templates/${id}`, method: "DELETE" }),
+      invalidatesTags: ["email", "admin"],
+    }),
+    sendTemplateTest: builder.mutation<
+      { message: string; sent: boolean },
+      { id: string; to: string; configId?: string; vars?: TemplateVars }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/admin/email-templates/${id}/test`,
+        method: "POST",
+        body,
+      }),
+    }),
+    broadcastEmail: builder.mutation<
+      BroadcastResponse,
+      { templateKey: string; audience: "ALL" | "USER" | "ADMIN"; vars?: TemplateVars }
+    >({
+      query: (body) => ({
+        url: "/admin/email-templates/broadcast",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    // -------------------------------------------------- admin magic-link action
+    sendAdminMagicLink: builder.mutation<
+      { message: string; sent: boolean; expiresMinutes?: number },
+      string
+    >({
+      query: (id) => ({
+        url: `/admin/users/${id}/send-magic-link`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -206,4 +318,19 @@ export const {
   useGetAdminAiModelsQuery,
   useSetAdminAiModelEnabledMutation,
   useDeleteAdminAiModelMutation,
+  useGetAdminSmtpQuery,
+  useCreateAdminSmtpMutation,
+  useUpdateAdminSmtpMutation,
+  useDeleteAdminSmtpMutation,
+  useActivateAdminSmtpMutation,
+  useTestAdminSmtpConnectionMutation,
+  useSmtpTestSendMutation,
+  useGetAdminEmailTemplatesQuery,
+  useCreateAdminEmailTemplateMutation,
+  useUpdateAdminEmailTemplateMutation,
+  useSetEmailTemplateEnabledMutation,
+  useDeleteAdminEmailTemplateMutation,
+  useSendTemplateTestMutation,
+  useBroadcastEmailMutation,
+  useSendAdminMagicLinkMutation,
 } = adminApi;

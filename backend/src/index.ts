@@ -18,6 +18,11 @@ import { startUploadWorker, stopUploadWorker } from './services/upload-jobs.work
 
 const app = express();
 
+// Disable auto ETags. RTK Query revalidates authenticated JSON GETs on a full
+// page load; Express would answer those conditional requests with a bodiless
+// 304, which the store treats as empty data and renders as an empty state.
+app.set('etag', false);
+
 const allowedOrigins = Env.ALLOWED_ORIGINS?.split(',');
 
 const corsOptions: CorsOptions = {

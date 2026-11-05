@@ -26,6 +26,13 @@ jest.mock('../../models/admin-audit.model', () => ({
   default: { create: jest.fn().mockResolvedValue(null) },
 }));
 
+// The status-update flow fires a transactional email; mock the mail layer so the
+// real env/SMTP config is never loaded and no delivery is attempted.
+jest.mock('../mail.service', () => ({
+  queueTemplate: jest.fn(),
+  sendTemplate: jest.fn().mockResolvedValue(undefined),
+}));
+
 import ContactRequestModel from '../../models/contact-request.model';
 import AdminAuditModel from '../../models/admin-audit.model';
 import {

@@ -34,6 +34,23 @@ import {
   adminListNoticesController,
   adminUpdateNoticeController,
 } from '../../controllers/notices.controller';
+import {
+  adminActivateSmtpController,
+  adminBroadcastEmailController,
+  adminCreateEmailTemplateController,
+  adminCreateSmtpController,
+  adminDeleteEmailTemplateController,
+  adminDeleteSmtpController,
+  adminListEmailTemplatesController,
+  adminListSmtpController,
+  adminSendTemplateTestController,
+  adminSetEmailTemplateEnabledController,
+  adminSmtpTestSendController,
+  adminTestSmtpConnectionController,
+  adminUpdateEmailTemplateController,
+  adminUpdateSmtpController,
+} from '../../controllers/email-admin.controller';
+import { adminSendMagicLinkController } from '../../controllers/auth.controller';
 
 const adminRoutes = Router();
 
@@ -85,5 +102,26 @@ adminRoutes.get('/notices', adminListNoticesController);
 adminRoutes.post('/notices', adminCreateNoticeController);
 adminRoutes.patch('/notices/:id', adminUpdateNoticeController);
 adminRoutes.delete('/notices/:id', adminDeleteNoticeController);
+
+// Users: admin-issued magic sign-in link.
+adminRoutes.post('/users/:id/send-magic-link', adminSendMagicLinkController);
+
+// SMTP configurations.
+adminRoutes.get('/smtp', adminListSmtpController);
+adminRoutes.post('/smtp', adminCreateSmtpController);
+adminRoutes.put('/smtp/:id', adminUpdateSmtpController);
+adminRoutes.delete('/smtp/:id', adminDeleteSmtpController);
+adminRoutes.post('/smtp/:id/activate', adminActivateSmtpController);
+adminRoutes.post('/smtp/:id/test', adminTestSmtpConnectionController);
+adminRoutes.post('/smtp/test-send', adminSmtpTestSendController);
+
+// Email templates.
+adminRoutes.get('/email-templates', adminListEmailTemplatesController);
+adminRoutes.post('/email-templates', adminCreateEmailTemplateController);
+adminRoutes.put('/email-templates/:id', adminUpdateEmailTemplateController);
+adminRoutes.patch('/email-templates/:id', adminSetEmailTemplateEnabledController);
+adminRoutes.delete('/email-templates/:id', adminDeleteEmailTemplateController);
+adminRoutes.post('/email-templates/:id/test', adminSendTemplateTestController);
+adminRoutes.post('/email-templates/broadcast', adminBroadcastEmailController);
 
 export default adminRoutes;

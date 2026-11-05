@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import { AUTH_ROUTES, PROTECTED_ROUTES } from "@/routes/common/routePath";
-import { useLoginMutation } from "@/features/auth/authAPI";
+import { useLoginMutation, useResendOtpMutation } from "@/features/auth/authAPI";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,8 @@ const SignInForm = ({
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [login, { isLoading }] = useLoginMutation();
+  const [resend, { isLoading: isResending }] = useResendOtpMutation();
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -51,8 +54,31 @@ const SignInForm = ({
       })
       .catch((error) => {
         console.log(error);
+        const code = error.data?.errorCode;
+        if (code === "AUTH_EMAIL_NOT_VERIFIED") {
+          setNeedsVerification(true);
+          form.setValue("password", "");
+          toast.error("Please verify your email to continue.");
+          return;
+        }
         toast.error(error.data?.message || "Failed to login");
       });
+  };
+
+  const resendCode = () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast.error("Enter your email first.");
+      return;
+    }
+    resend({ email })
+      .unwrap()
+      .then(() =>
+        navigate(AUTH_ROUTES.VERIFY_EMAIL, { state: { email } })
+      )
+      .catch((error) =>
+        toast.error(error.data?.message || "Failed to resend the code.")
+      );
   };
 
   return (
@@ -69,6 +95,37 @@ const SignInForm = ({
           </p>
         </div>
         <div className="grid gap-6">
+          {needsVerification && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200">
+              <p className="mb-2">
+                Your email isn't verified yet. Check your inbox for the code,
+                or resend it.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isResending}
+                  onClick={resendCode}
+                >
+                  Resend code
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    navigate(AUTH_ROUTES.VERIFY_EMAIL, {
+                      state: { email: form.getValues("email") },
+                    })
+                  }
+                >
+                  Enter code
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="grid gap-2">
             <FormField
               control={form.control}
@@ -101,6 +158,14 @@ const SignInForm = ({
                 </FormItem>
               )}
             />
+          </div>
+          <div className="flex items-center justify-between">
+            <Link
+              to={AUTH_ROUTES.FORGOT_PASSWORD}
+              className="text-sm underline underline-offset-4 text-muted-foreground"
+            >
+              Forgot password?
+            </Link>
           </div>
           <Button disabled={isLoading} type="submit" className="w-full !py-4">
             {isLoading && <Loader className="h-4 w-4 animate-spin" />}

@@ -20,6 +20,8 @@ import { computeFileSha256 } from '../utils/upload-source';
 import { sanitizeFilename } from '../utils/helper';
 import { logger } from '../utils/logger';
 import { Env } from '../config/env.config';
+import UserModel from '../models/user.model';
+import { queueTemplate } from './mail.service';
 
 const WORKER_ID = randomUUID();
 const POLL_INTERVAL_MS = 1000;
@@ -298,6 +300,18 @@ const processItem = async (item: UploadJobItemDocument): Promise<void> => {
     } else {
       await UploadJobModel.markItemFailure(item.id, message, null);
       logger.error(`Terminal upload failure for item ${item.id}: ${message}`);
+      // Notify the owner that an upload failed terminally (best-effort).
+      try {
+        const owner = await UserModel.findById(job.userId);
+        if (owner) {
+          queueTemplate('dashboard_error', owner.email, {
+            userName: owner.name,
+            errorDetails: `Upload of "${item.originalName || 'a file'}" failed: ${message}`,
+          });
+        }
+      } catch (notifyError) {
+        logger.error('Failed to queue dashboard error email', notifyError);
+      }
     }
   }
 };

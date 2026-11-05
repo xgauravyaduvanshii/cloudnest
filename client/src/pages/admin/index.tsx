@@ -1,7 +1,9 @@
 import PageLayout from "@/components/page-layout";
 import AiSettingsSection from "./_component/ai-settings";
 import ContactRequestsSection from "./_component/contact-requests";
+import EmailTemplatesSection from "./_component/email-templates";
 import NoticesAdminSection from "./_component/notices-admin";
+import SmtpSettingsSection from "./_component/smtp-settings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,7 @@ import {
   useGetAdminUsersQuery,
   useSyncAdminStorageAccountMutation,
   useRemoveAdminStorageAccountMutation,
+  useSendAdminMagicLinkMutation,
   useUpdateAdminProviderSettingsMutation,
   useUpdateAdminStorageStatusMutation,
   useUpdateAdminUserMutation,
@@ -36,6 +39,7 @@ import {
   Cloud,
   Download,
   Key,
+  Mail,
   Power,
   RefreshCw,
   Save,
@@ -65,6 +69,7 @@ const Admin = () => {
   const [createApiKey] = useCreateAdminApiKeyMutation();
   const [deleteApiKey] = useDeleteAdminApiKeyMutation();
   const [updateProviderSettings] = useUpdateAdminProviderSettingsMutation();
+  const [sendMagicLink] = useSendAdminMagicLinkMutation();
   const [getGoogleAuthUrl] = useLazyGetGoogleAuthUrlQuery();
   const [startTelegramAuth, { isLoading: isStartingTelegram }] =
     useStartTelegramAuthMutation();
@@ -248,6 +253,15 @@ const Admin = () => {
     setAdminTelegramPassword("");
   };
 
+  const sendAdminMagicLink = async (id: string) => {
+    try {
+      await sendMagicLink(id).unwrap();
+      toast.success("Magic link sent to the user's email");
+    } catch (e: any) {
+      toast.error(e?.data?.message || "Failed to send magic link");
+    }
+  };
+
   const disconnectAdminStorage = async (id: string) => {
     try {
       const result = await disconnectStorage(id).unwrap();
@@ -288,6 +302,7 @@ const Admin = () => {
           <TabsTrigger value="ai">AI</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="notices">Notices</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -375,6 +390,14 @@ const Admin = () => {
                           }
                         >
                           {user.status === "ACTIVE" ? "Disable" : "Enable"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => sendAdminMagicLink(user.id)}
+                        >
+                          <Mail className="size-4" />
+                          Magic link
                         </Button>
                       </div>
                     </td>
@@ -722,6 +745,13 @@ const Admin = () => {
 
         <TabsContent value="notices">
           <NoticesAdminSection />
+        </TabsContent>
+
+        <TabsContent value="email">
+          <div className="space-y-4">
+            <SmtpSettingsSection />
+            <EmailTemplatesSection />
+          </div>
         </TabsContent>
       </Tabs>
     </PageLayout>

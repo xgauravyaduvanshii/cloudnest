@@ -3,6 +3,7 @@ import ContactRequestModel, {
 } from '../models/contact-request.model';
 import AdminAuditModel from '../models/admin-audit.model';
 import { NotFoundException } from '../utils/app-error';
+import { queueTemplate } from './mail.service';
 import { SubmitContactSchemaType, UpdateContactStatusSchemaType } from '../validators/contact.validator';
 
 export const createContactService = async (
@@ -76,6 +77,14 @@ export const updateContactStatusService = async (
     entityId: id,
     metadata: { status: data.status },
   }).catch(() => null);
+
+  // Notify the requester of the new status (fire-and-forget).
+  queueTemplate('contact_status_update', updated.email, {
+    userName: updated.name,
+    subject: updated.subject || 'your request',
+    status: updated.status,
+    message: updated.adminNote || 'Our team has updated your request.',
+  });
 
   return { message: 'Status updated', request: toPublicRequest(updated) };
 };
