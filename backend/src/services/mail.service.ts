@@ -2,7 +2,7 @@ import nodemailer, { Transporter } from 'nodemailer';
 import { Env } from '../config/env.config';
 import SmtpConfigModel, { SmtpConfigRaw } from '../models/smtp-config.model';
 import EmailTemplateModel, { EmailTemplate } from '../models/email-template.model';
-import { renderTemplate, TemplateVars } from '../utils/render-template';
+import { renderTemplate, withSystemVars, TemplateVars } from '../utils/render-template';
 import { ErrorCodeEnum } from '../enums/error-code.enum';
 import {
   BadRequestException,
@@ -108,6 +108,8 @@ export const sendMailWithConfig = async (
 /**
  * Render a template and send it. Throws if the template is missing/disabled or
  * mail is not configured. `subjectVars` defaults to the same vars as the body.
+ * System vars (e.g. `currentYear` for the footer copyright) are merged in so no
+ * caller has to remember to pass them.
  */
 export const sendTemplate = async (
   key: string,
@@ -120,11 +122,12 @@ export const sendTemplate = async (
   if (!template.isEnabled) {
     throw new BadRequestException(`Email template "${key}" is disabled`);
   }
+  const merged = withSystemVars(vars);
   await sendMail({
     to,
-    subject: renderTemplate(template.subject, vars),
-    html: renderTemplate(template.htmlBody, vars),
-    text: renderTemplate(template.textBody, vars),
+    subject: renderTemplate(template.subject, merged),
+    html: renderTemplate(template.htmlBody, merged),
+    text: renderTemplate(template.textBody, merged),
     replyTo: opts?.replyTo,
   });
 };

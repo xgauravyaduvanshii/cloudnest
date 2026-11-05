@@ -3,7 +3,7 @@
  * transactional email. Confirms substitution, optional inner whitespace, and
  * that unknown/empty tokens never leak raw placeholders to recipients.
  */
-import { renderTemplate } from '../render-template';
+import { renderTemplate, withSystemVars } from '../render-template';
 
 describe('renderTemplate', () => {
   it('replaces known tokens with their values', () => {
@@ -48,5 +48,35 @@ describe('renderTemplate', () => {
 
   it('replaces every occurrence of a repeated token', () => {
     expect(renderTemplate('{{x}}-{{x}}-{{x}}', { x: 'a' })).toBe('a-a-a');
+  });
+});
+
+describe('withSystemVars', () => {
+  it('supplies currentYear without the caller passing it', () => {
+    expect(withSystemVars({ userName: 'Ada' }).currentYear).toBe(
+      String(new Date().getFullYear()),
+    );
+  });
+
+  it('keeps caller-supplied values and other vars intact', () => {
+    expect(withSystemVars({ userName: 'Ada', otpCode: 123456 })).toEqual({
+      currentYear: String(new Date().getFullYear()),
+      userName: 'Ada',
+      otpCode: 123456,
+    });
+  });
+
+  it('lets a caller override currentYear explicitly', () => {
+    expect(withSystemVars({ currentYear: 1999 }).currentYear).toBe(1999);
+  });
+
+  it('renders the footer copyright line end to end', () => {
+    const out = renderTemplate(
+      'CloudNest by FlyingDarkDev / Urmate. (c) {{currentYear}} CloudNest.',
+      withSystemVars({}),
+    );
+    expect(out).toBe(
+      `CloudNest by FlyingDarkDev / Urmate. (c) ${new Date().getFullYear()} CloudNest.`,
+    );
   });
 });

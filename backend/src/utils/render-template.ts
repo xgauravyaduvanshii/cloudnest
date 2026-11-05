@@ -13,3 +13,13 @@ export const renderTemplate = (
     const value = vars[name];
     return value === undefined || value === null ? '' : String(value);
   });
+
+/**
+ * Variables every template gets without the caller supplying them. Currently
+ * only `currentYear`, so the footer copyright rolls forward each year with no
+ * admin editing. Callers may still override by passing the key explicitly.
+ */
+export const withSystemVars = (vars: TemplateVars = {}): TemplateVars => ({
+  currentYear: String(new Date().getFullYear()),
+  ...vars,
+});

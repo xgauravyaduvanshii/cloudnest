@@ -9,7 +9,7 @@ import {
   sendMailWithConfig,
   verifySmtpConnection,
 } from './mail.service';
-import { renderTemplate, TemplateVars } from '../utils/render-template';
+import { renderTemplate, withSystemVars, TemplateVars } from '../utils/render-template';
 import { ErrorCodeEnum } from '../enums/error-code.enum';
 import {
   BadRequestException,
@@ -221,7 +221,7 @@ export const sendTemplateTestService = async (
     );
   }
 
-  const vars = params.vars || {};
+  const vars = withSystemVars(params.vars);
   await sendMailWithConfig(config, {
     to: params.to,
     subject: renderTemplate(template.subject, vars),
@@ -253,11 +253,13 @@ export const broadcastEmailService = async (
   let failed = 0;
   for (const r of recipients) {
     try {
+      // System vars (e.g. `currentYear`) fill the shared footer on every message.
+      const vars = withSystemVars({ userName: r.name, ...params.vars });
       await sendMailWithConfig(config, {
         to: r.email,
-        subject: renderTemplate(template.subject, { userName: r.name, ...params.vars }),
-        html: renderTemplate(template.htmlBody, { userName: r.name, ...params.vars }),
-        text: renderTemplate(template.textBody, { userName: r.name, ...params.vars }),
+        subject: renderTemplate(template.subject, vars),
+        html: renderTemplate(template.htmlBody, vars),
+        text: renderTemplate(template.textBody, vars),
       });
       sent += 1;
     } catch (error) {

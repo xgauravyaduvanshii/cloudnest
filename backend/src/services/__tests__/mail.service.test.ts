@@ -163,6 +163,24 @@ describe('sendTemplate', () => {
     await expect(sendTemplate('welcome', 'a@b.com', {})).rejects.toBeInstanceOf(Error);
     expect(mockSendMail).not.toHaveBeenCalled();
   });
+
+  it('fills the footer currentYear placeholder at send time', async () => {
+    mockedGetActiveRaw.mockResolvedValue(dbConfig());
+    mockedGetByKey.mockResolvedValue(
+      template({
+        htmlBody: '<p>&copy; {{currentYear}} CloudNest</p>',
+        textBody: '(c) {{currentYear}} CloudNest',
+      }),
+    );
+    await sendTemplate('welcome', 'a@b.com', { userName: 'Ada' });
+    const year = String(new Date().getFullYear());
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: `<p>&copy; ${year} CloudNest</p>`,
+        text: `(c) ${year} CloudNest`,
+      }),
+    );
+  });
 });
 
 describe('queueTemplate (fire-and-forget)', () => {
