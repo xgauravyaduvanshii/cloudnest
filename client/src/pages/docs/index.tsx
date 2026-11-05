@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import PageLayout from "@/components/page-layout";
 import { Seo } from "@/components/seo/seo";
+import { SiteLayout } from "@/components/marketing/site-layout";
 import { PROTECTED_ROUTES, PUBLIC_ROUTES } from "@/routes/common/routePath";
 import { SITE_URL } from "@/lib/site";
 import { useTheme } from "@/context/theme-provider";
@@ -23,6 +23,18 @@ const Docs = () => {
   const public_baseurl = `${import.meta.env.VITE_API_URL}`;
   const codeTheme = theme === "light" ? atomOneLight : atomOneDark;
   const backgroundColor = theme === "dark" ? "#161616" : "#fafafa";
+
+  const toc = [
+    { id: "installation", label: "Installation" },
+    { id: "provider-uploads", label: "Provider uploads" },
+    { id: "file-management", label: "File management" },
+    { id: "quick-start", label: "Quick start" },
+    { id: "node", label: "Node.js usage" },
+    { id: "browser", label: "Browser / React" },
+    { id: "nextjs", label: "Next.js server actions" },
+    { id: "errors", label: "Error handling" },
+    { id: "rest", label: "Direct REST API" },
+  ];
 
   return (
     <>
@@ -55,7 +67,28 @@ const Docs = () => {
           },
         ]}
       />
-      <PageLayout title="Docs" subtitle="CloudNest API Documentation">
+      <SiteLayout
+        eyebrow="Documentation"
+        title="CloudNest API & SDK documentation"
+        description="Install @cloudnest/sdk, create an API key, and upload, list, preview, download, and delete files across Google Drive, Telegram, and AWS S3."
+      >
+      <nav
+        aria-label="On this page"
+        className="mb-10 rounded-xl border border-white/10 bg-white/[0.03] p-5"
+      >
+        <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
+          On this page
+        </p>
+        <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          {toc.map((t) => (
+            <li key={t.id}>
+              <a href={`#${t.id}`} className="text-white/65 transition hover:text-white">
+                {t.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
       <div className="mx-auto px-1">
         <div className="mb-8">
           <h2 className="text-lg font-semibold">TypeScript/JavaScript SDK</h2>
@@ -72,7 +105,7 @@ const Docs = () => {
             .
           </p>
 
-          <Card className="mb-5">
+          <Card id="installation" className="mb-5 scroll-mt-24">
             <CardHeader>
               <CardTitle>Installation</CardTitle>
               <CardDescription>
@@ -94,7 +127,7 @@ const Docs = () => {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="provider-uploads" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Provider Uploads</CardTitle>
               <CardDescription>
@@ -126,7 +159,7 @@ await client.uploadFiles(files, {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="file-management" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>File Management</CardTitle>
               <CardDescription>
@@ -165,7 +198,7 @@ await client.deleteFiles(["file-id-1", "file-id-2"]);`}
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="quick-start" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Quick Start</CardTitle>
               <CardDescription>
@@ -196,7 +229,7 @@ console.log(result.data);`}
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="node" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Node.js Usage</CardTitle>
               <CardDescription>
@@ -237,7 +270,7 @@ await client.uploadFiles(buffer);`}
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="browser" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Browser/React Usage</CardTitle>
               <CardDescription>
@@ -284,7 +317,7 @@ function FileUpload() {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="nextjs" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Next.js Server Actions</CardTitle>
               <CardDescription>
@@ -323,7 +356,7 @@ async function uploadAction(formData: FormData) {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
+          <Card id="errors" className="mb-6 scroll-mt-24">
             <CardHeader>
               <CardTitle>Error Handling</CardTitle>
               <CardDescription>
@@ -389,7 +422,7 @@ try {
         </div>
 
         <div>
-          <h2 className="text-lg font-bold mb-6">Direct API Usage</h2>
+          <h2 id="rest" className="mb-6 scroll-mt-24 text-lg font-bold">Direct API Usage</h2>
           <Card>
             <CardHeader>
               <CardTitle>REST API</CardTitle>
@@ -444,7 +477,7 @@ try {
           </Card>
         </div>
       </div>
-      </PageLayout>
+      </SiteLayout>
     </>
   );
 };
