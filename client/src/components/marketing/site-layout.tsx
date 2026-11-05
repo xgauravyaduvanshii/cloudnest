@@ -214,7 +214,7 @@ export const FeatureCard = ({
 );
 
 export const CodeBlock = ({ children }: { children: string }) => (
-  <pre className="overflow-x-auto rounded-[8px] border border-white/10 bg-black/35 p-4 text-sm leading-6 text-white/75">
+  <pre className="max-w-full overflow-x-auto rounded-[8px] border border-white/10 bg-black/35 p-3 text-xs leading-6 text-white/75 sm:p-4 sm:text-sm">
     <code style={{ whiteSpace: "pre" }}>{children}</code>
   </pre>
 );

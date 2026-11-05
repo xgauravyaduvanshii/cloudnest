@@ -125,7 +125,7 @@ export const SDKPage = () => (
       description="One SDK and API key, with the backend routing storage to whichever providers your admin has enabled."
     >
       <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-        <div>
+        <div className="min-w-0">
           <Section title="Quick start" lead="Three steps to your first upload.">
             <ol className="mt-2 space-y-4">
               {[
@@ -165,7 +165,7 @@ export const SDKPage = () => (
           </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <div className="flex justify-end">
             <CopyButton text={`npm install @cloudnest/sdk`} />
           </div>
@@ -257,7 +257,7 @@ export const AIPromptPage = () => (
       description="A public, copy-ready prompt for Claude, Codex, Cursor, Windsurf, and other agents that need to add CloudNest uploads to a project."
     >
       <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <FeatureCard icon={KeyRound} title="Public" body="No login required. Agents can read this page, /llms.txt, /llms-full.txt, or /ai-prompt.md." />
           <FeatureCard icon={Code2} title="SDK-first" body="Points agents to @cloudnest/sdk and the hosted API base URL." />
           <FeatureCard icon={Cloud} title="Provider-aware" body="Explains S3, Google Drive, Telegram, storage accounts, and disabled providers." />
@@ -272,7 +272,7 @@ export const AIPromptPage = () => (
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">The prompt</h2>
             <CopyButton text={aiAgentPrompt} label="Copy prompt" />

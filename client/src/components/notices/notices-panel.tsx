@@ -37,11 +37,11 @@ const levelIcon: Record<NoticeLevel, React.ComponentType<{ className?: string }>
 };
 
 const levelTone: Record<NoticeLevel, string> = {
-  welcome: "text-red-200 bg-red-500/15 border-red-500/25",
+  welcome: "text-amber-200 bg-amber-500/15 border-amber-500/25",
   info: "text-sky-200 bg-sky-500/15 border-sky-500/25",
   success: "text-emerald-200 bg-emerald-500/15 border-emerald-500/25",
-  warning: "text-amber-200 bg-amber-500/15 border-amber-500/25",
-  maintenance: "text-orange-200 bg-orange-500/15 border-orange-500/25",
+  warning: "text-orange-200 bg-orange-500/15 border-orange-500/25",
+  maintenance: "text-violet-200 bg-violet-500/15 border-violet-500/25",
 };
 
 const formatDate = (iso: string) =>
@@ -122,7 +122,7 @@ export const NoticesBell = () => {
         >
           <Bell className="size-5" />
           {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
               {count > 9 ? "9+" : count}
             </span>
           )}
