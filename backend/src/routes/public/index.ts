@@ -25,9 +25,9 @@ publicRoutes.post(
   submitContactController,
 );
 // Public (unauthenticated) notices for the marketing announcement bar. Uses a
-// distinct path because the authenticated `/notices/active` route is mounted on
-// the internal router first and would otherwise shadow this one.
-publicRoutes.get(`${Env.BASE_PATH}/notices/public`, publicNoticesController);
+// distinct path because the internal router mounts a JWT-guarded handler on the
+// entire `/notices` prefix first, which would otherwise 401 this public route.
+publicRoutes.get(`${Env.BASE_PATH}/site/notices`, publicNoticesController);
 
 // API contract + interactive docs (registered before the authed v1 mount so they
 // are reachable without a key and bypass the v1 rate limiter).

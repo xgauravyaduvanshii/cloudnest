@@ -13,7 +13,7 @@ export const noticesApi = apiClient.injectEndpoints({
       providesTags: ["notices"],
     }),
     publicNotices: builder.query<PublicNoticesResponse, void>({
-      query: () => ({ url: "/notices/public", method: "GET" }),
+      query: () => ({ url: "/site/notices", method: "GET" }),
       providesTags: ["notices"],
     }),
     dismissNotice: builder.mutation<{ message: string }, string>({
