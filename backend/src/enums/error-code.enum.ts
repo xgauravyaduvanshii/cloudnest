@@ -20,6 +20,9 @@ export const ErrorCodeEnum = {
   INVALID_INPUT: 'INVALID_INPUT',
   RESOURCE_CONFLICT: 'RESOURCE_CONFLICT',
 
+  // Provider credential lifecycle
+  GOOGLE_REAUTH_REQUIRED: 'GOOGLE_REAUTH_REQUIRED',
+
   // System Errors
   INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
 } as const;

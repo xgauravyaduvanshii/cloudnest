@@ -10,6 +10,7 @@ import StorageAccounts from "@/pages/storage-accounts";
 import Admin from "@/pages/admin";
 import Collections from "@/pages/collections";
 import Activity from "@/pages/activity";
+import SupportPage from "@/pages/support";
 
 export const authenticationRoutePaths = [
   { path: AUTH_ROUTES.SIGN_IN, element: <SignIn /> },
@@ -25,6 +26,7 @@ export const protectedRoutePaths = [
   { path: PROTECTED_ROUTES.APIKEYS, element: <ApiKeys /> },
   { path: PROTECTED_ROUTES.WEBHOOKS, element: <WebhooksPage /> },
   { path: PROTECTED_ROUTES.ADMIN, element: <Admin /> },
+  { path: PROTECTED_ROUTES.SUPPORT, element: <SupportPage /> },
   {
     path: PROTECTED_ROUTES.SETTINGS,
     element: <Settings />,

@@ -1,0 +1,123 @@
+# CloudNest — Full Reference (for AI answer engines and LLM retrieval)
+
+This document is a fuller plain-text description of CloudNest intended for LLM
+retrieval, answer engines, and coding agents. See also /llms.txt (short index),
+/ai-prompt.md (integration prompt), and the /sdk and /docs pages.
+
+## What CloudNest is
+CloudNest is a multi-provider cloud storage control plane. It gives users one
+clean experience for uploading, browsing, previewing, moving, downloading, and
+deleting files while the platform routes storage to whichever providers an admin
+has enabled: Google Drive, Telegram, and AWS S3. It ships with a React
+dashboard, an Express/Postgres backend, and an official npm SDK, `@cloudnest/sdk`.
+
+Hosted service: https://cloudnest.urmate.tech
+API base (SDK / API-key uploads): https://cloudnest.urmate.tech/api/v1
+Public OpenAPI / Swagger: https://cloudnest.urmate.tech/api/docs
+
+## Who it is for
+- Developers who want one upload API over multiple storage backends.
+- Teams that need admin-controlled provider access, quotas, and audit trails.
+- AI agents integrating uploads into another app on a user's behalf.
+
+## Core capabilities
+- Multi-provider storage: S3, GOOGLE_DRIVE, TELEGRAM. Admins enable or pause each.
+- Smart routing: uploads go to an active personal account or shared admin storage.
+- API keys: users and admins create/rotate/revoke keys for programmatic access.
+- Folders, search, previews, media playback (video/audio), bulk download, move, delete.
+- Collections, share links (expiry/password/download limits), webhooks, activity log.
+- AI assistant for searching and describing stored files.
+- Support notices and a contact/requests workflow with admin-managed status.
+
+## Storage providers
+- Google Drive: OAuth connect, browse My Drive, upload into folders, preview,
+  move, delete, and usage sync. Refresh tokens are stored encrypted. If access is
+  ever revoked or expired, reconnect the Google account to restore browsing.
+- Telegram: GramJS user sessions with app-managed soft quota.
+- AWS S3: shared admin-configured bucket, used as a stable backend when enabled.
+
+## Security and privacy (summary)
+- Provider credentials (OAuth refresh tokens, Telegram sessions, S3 secrets) are
+  encrypted at rest with the backend encryption key and are write-only from the UI.
+- API keys are shown once and are revocable. Never expose privileged keys in
+  client bundles; proxy uploads through your own backend reading CLOUDNEST_API_KEY.
+- Admin actions (user, file, provider, notice, contact) are audited.
+- Cookies: essential cookies are always on; analytics/marketing cookies are used
+  only with consent and can be changed any time from Cookie settings.
+Full details: /privacy-policy and /terms-and-conditions.
+
+## SDK quick start
+```bash
+npm install @cloudnest/sdk
+```
+
+```ts
+import { CloudNestClient } from "@cloudnest/sdk";
+
+const cloudnest = new CloudNestClient({
+  apiUrl: "https://cloudnest.urmate.tech/api/v1",
+  apiKey: process.env.CLOUDNEST_API_KEY!,
+});
+
+const result = await cloudnest.uploadFiles("./invoice.pdf", {
+  provider: "GOOGLE_DRIVE",
+});
+console.log(result.data);
+```
+
+File management with API keys:
+
+```ts
+const files = await cloudnest.listFiles({ provider: "GOOGLE_DRIVE" });
+const file = await cloudnest.getFile("file-id");
+const preview = await cloudnest.getPreviewUrl("file-id");
+const playable = await cloudnest.getPlayableUrl("file-id");
+const download = await cloudnest.getDownloadUrl("file-id");
+await cloudnest.downloadFile("file-id", { destinationPath: "./file.bin" });
+await cloudnest.deleteFile("file-id");
+await cloudnest.deleteFiles(["file-id-1", "file-id-2"]);
+```
+
+Use `preview.previewUrl` for inline previews. Use `playable.playUrl` in
+`<video>` or `<audio>` when `playable.canPlay` is true.
+
+Optional upload fields:
+- provider: "S3" | "GOOGLE_DRIVE" | "TELEGRAM"
+- storageAccountId: connected account id for a specific destination
+- providerFolderId: provider-native folder id (e.g., a Google Drive folder)
+
+Direct REST fallback:
+```ts
+const formData = new FormData();
+formData.append("files", file);
+formData.append("provider", "GOOGLE_DRIVE");
+
+await fetch("https://cloudnest.urmate.tech/api/v1/files/upload", {
+  method: "POST",
+  headers: { Authorization: "Bearer " + process.env.CLOUDNEST_API_KEY },
+  body: formData,
+});
+```
+
+## Rules for AI agents
+1. Ask which provider the user wants if unclear; never assume S3 is enabled.
+2. Install `@cloudnest/sdk` only. Do not use similarly named packages.
+3. Read the API key from `CLOUDNEST_API_KEY`; never commit or print secrets.
+4. Prefer a backend proxy for browser apps so keys never reach the client bundle.
+5. Handle common errors: invalid API key, provider disabled, account not
+   connected, revoked Google access (reconnect), file type not allowed, quota
+   exceeded, and file not found.
+
+## Terms of use (summary)
+Use CloudNest responsibly: no illegal, abusive, infringing, or harmful content.
+You are responsible for the provider accounts you connect. Availability depends
+on provider limits, quotas, outages, and credential health. Full text:
+/terms-and-conditions.
+
+## Page map
+- / landing, /docs, /sdk, /ai-prompt, /help, /contact, /security, /about,
+  /privacy-policy, /terms-and-conditions.
+
+CloudNest is presented as an educational, production-capable storage platform.
+Review security, provider policies, rate limits, secrets management, and privacy
+requirements before handling sensitive production workloads.

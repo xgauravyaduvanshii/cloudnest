@@ -550,8 +550,14 @@ const assertStorageAccountForUser = async (
   if (account.provider !== provider) {
     throw new BadRequestException('Storage account provider mismatch');
   }
-  if (account.status !== 'ACTIVE') {
+  if (account.status !== 'ACTIVE' && account.status !== 'ERROR') {
     throw new BadRequestException('Storage account is not active');
+  }
+  // An ERROR account that still holds credentials is allowed through so a healthy
+  // token can recover the account on the next successful provider call. Only a
+  // hard-blocked state (DISABLED/PENDING_AUTH) or missing credentials is rejected.
+  if (account.status === 'ERROR' && !account.encryptedCredentials) {
+    throw new BadRequestException('Storage account needs to be reconnected');
   }
   if (account.ownerType !== 'ADMIN' && account.userId !== user._id) {
     throw new UnauthorizedException('Storage account access denied');
@@ -640,6 +646,14 @@ export const listGoogleDriveItemsService = async (
     pageSize: input.pageSize,
     pageToken: input.pageToken,
   });
+
+  // A successful live Drive call proves the token is healthy again; if the account
+  // was previously flagged ERROR by a transient blip, recover it to ACTIVE.
+  if (account.status === 'ERROR') {
+    await StorageAccountModel.updateStatus(account.id, 'ACTIVE', null).catch(
+      () => null,
+    );
+  }
 
   return {
     folders: result.folders.map((item) =>
@@ -836,8 +850,11 @@ export const getGoogleDriveItemPreviewStreamService = async (
   if (account.provider !== 'GOOGLE_DRIVE') {
     throw new BadRequestException('Storage account provider mismatch');
   }
-  if (account.status !== 'ACTIVE') {
+  if (account.status !== 'ACTIVE' && account.status !== 'ERROR') {
     throw new BadRequestException('Storage account is not active');
+  }
+  if (account.status === 'ERROR' && !account.encryptedCredentials) {
+    throw new BadRequestException('Storage account needs to be reconnected');
   }
   if (account.ownerType !== 'ADMIN' && account.userId !== decoded.userId) {
     throw new UnauthorizedException('Storage account access denied');

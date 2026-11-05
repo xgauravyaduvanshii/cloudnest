@@ -24,6 +24,8 @@ import {
   getTelegramCredentials,
 } from '../providers/telegram.provider';
 import { getStorageProvider } from '../providers';
+import { classifyDriveError } from '../providers/provider-error';
+import { ErrorCodeEnum } from '../enums/error-code.enum';
 import { logger } from '../utils/logger';
 
 type GoogleState = {
@@ -305,11 +307,20 @@ export const syncStorageAccountService = async (
     return toPublicStorageAccount(updated!);
   } catch (error) {
     logger.error('Failed to sync storage account', error);
-    await StorageAccountModel.updateStatus(
-      account.id,
-      'ERROR',
-      error instanceof Error ? error.message : 'Unknown sync error',
-    );
+    // Only a genuine auth failure (revoked/expired grant, 401) should downgrade the
+    // account status. Transient/rate-limit/quota/5xx blips must NOT permanently drop
+    // the account — surface the error but keep the current status so reads can recover.
+    const classified = classifyDriveError(error);
+    const isAuthFailure =
+      classified.kind === 'AUTH' ||
+      (error as any)?.errorCode === ErrorCodeEnum.GOOGLE_REAUTH_REQUIRED;
+    if (isAuthFailure) {
+      await StorageAccountModel.updateStatus(
+        account.id,
+        'ERROR',
+        error instanceof Error ? error.message : 'Unknown sync error',
+      );
+    }
     throw error;
   }
 };

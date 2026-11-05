@@ -21,6 +21,7 @@ import { UserNav } from "./user-nav";
 import { useAppDispatch, useTypedSelector } from "@/app/hook";
 import { logout } from "@/features/auth/authSlice";
 import { useTheme } from "@/context/theme-provider";
+import { NoticesBell } from "@/components/notices/notices-panel";
 
 const Navbar = () => {
   const { pathname } = useLocation();
@@ -121,6 +122,7 @@ const Navbar = () => {
                   </NavLink>
                 </Button>
               )}
+              <NoticesBell />
               <Button
                 variant="outline"
                 size="icon"

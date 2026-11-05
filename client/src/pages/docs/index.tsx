@@ -11,7 +11,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageLayout from "@/components/page-layout";
-import { PROTECTED_ROUTES } from "@/routes/common/routePath";
+import { Seo } from "@/components/seo/seo";
+import { PROTECTED_ROUTES, PUBLIC_ROUTES } from "@/routes/common/routePath";
+import { SITE_URL } from "@/lib/site";
 import { useTheme } from "@/context/theme-provider";
 
 SyntaxHighlighter.registerLanguage("javascript", js);
@@ -23,7 +25,37 @@ const Docs = () => {
   const backgroundColor = theme === "dark" ? "#161616" : "#fafafa";
 
   return (
-    <PageLayout title="Docs" subtitle="CloudNest API Documentation">
+    <>
+      <Seo
+        path={PUBLIC_ROUTES.DOCS}
+        title="CloudNest Docs — API & SDK guide"
+        description="Official CloudNest documentation: install the @cloudnest/sdk, create API keys, and upload, list, preview, download, and delete files across Google Drive, Telegram, and AWS S3."
+        keywords={[
+          "cloudnest docs",
+          "cloudnest api",
+          "@cloudnest/sdk",
+          "file upload api documentation",
+        ]}
+        type="article"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            headline: "CloudNest API & SDK Documentation",
+            url: `${SITE_URL}/docs`,
+            profiler: "TypeScript",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "Docs", item: `${SITE_URL}/docs` },
+            ],
+          },
+        ]}
+      />
+      <PageLayout title="Docs" subtitle="CloudNest API Documentation">
       <div className="mx-auto px-1">
         <div className="mb-8">
           <h2 className="text-lg font-semibold">TypeScript/JavaScript SDK</h2>
@@ -412,7 +444,8 @@ try {
           </Card>
         </div>
       </div>
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 };
 

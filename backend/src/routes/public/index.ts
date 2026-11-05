@@ -10,9 +10,24 @@ import {
 } from '../../controllers/shares.controller';
 import { Env } from '../../config/env.config';
 import { openApiSpec, swaggerHtml } from '../../config/openapi.config';
+import { optionalAuthMiddleware } from '../../middlewares/optional-auth.middleware';
+import { submitContactController } from '../../controllers/contact.controller';
+import { publicNoticesController } from '../../controllers/notices.controller';
 import v1Routes from './v1';
 
 const publicRoutes = Router();
+
+// Public contact form. Optional bearer token links the submission to a signed-in
+// user so it also appears in their dashboard; anonymous submissions still work.
+publicRoutes.post(
+  `${Env.BASE_PATH}/contact`,
+  optionalAuthMiddleware,
+  submitContactController,
+);
+// Public (unauthenticated) notices for the marketing announcement bar. Uses a
+// distinct path because the authenticated `/notices/active` route is mounted on
+// the internal router first and would otherwise shadow this one.
+publicRoutes.get(`${Env.BASE_PATH}/notices/public`, publicNoticesController);
 
 // API contract + interactive docs (registered before the authed v1 mount so they
 // are reachable without a key and bypass the v1 rate limiter).

@@ -1,16 +1,35 @@
 # CloudNest
 
-CloudNest is a multi-provider storage platform with a React dashboard, an Express/Postgres backend, and the official npm SDK package `@cloudnest/sdk`.
+CloudNest is a multi-provider storage control plane: a React dashboard, an
+Express/Postgres backend, and the official npm SDK package `@cloudnest/sdk`.
+It unifies uploads, API keys, folders, previews, downloads, and admin controls
+across Google Drive, Telegram, and AWS S3 behind one experience.
 
-Public URLs:
-- Website: https://cloudnest.urmate.tech
-- SDK docs: https://cloudnest.urmate.tech/sdk
+## Primary URLs
+- Website / landing: https://cloudnest.urmate.tech
+- Docs: https://cloudnest.urmate.tech/docs
+- SDK guide: https://cloudnest.urmate.tech/sdk
 - AI agent prompt: https://cloudnest.urmate.tech/ai-prompt
+- Full plain-text reference: https://cloudnest.urmate.tech/llms-full.txt
 - Markdown prompt: https://cloudnest.urmate.tech/ai-prompt.md
+- Help / FAQ: https://cloudnest.urmate.tech/help
+- Contact: https://cloudnest.urmate.tech/contact
+- Security: https://cloudnest.urmate.tech/security
+- About: https://cloudnest.urmate.tech/about
+- Privacy Policy: https://cloudnest.urmate.tech/privacy-policy
+- Terms: https://cloudnest.urmate.tech/terms-and-conditions
 - API-key upload base URL: https://cloudnest.urmate.tech/api/v1
+- Public OpenAPI (Swagger): https://cloudnest.urmate.tech/api/docs
 
-Use this when integrating CloudNest into another project:
+## Key facts
+- Providers: S3, GOOGLE_DRIVE, TELEGRAM. Admins enable/disable each provider.
+- API keys are secret; read them from `CLOUDNEST_API_KEY`, never commit them.
+- Google Drive supports connect, browse folders, upload, preview, move, delete, usage sync.
+- Telegram uses user sessions with app-managed soft quota.
+- Credentials (OAuth refresh tokens, Telegram sessions, provider secrets) are encrypted at rest.
+- The official package name is `@cloudnest/sdk` (not `cloudnest-sdk`).
 
+## Quick start
 ```bash
 npm install @cloudnest/sdk
 ```
@@ -23,39 +42,11 @@ const cloudnest = new CloudNestClient({
   apiKey: process.env.CLOUDNEST_API_KEY!,
 });
 
-const result = await cloudnest.uploadFiles("./file.pdf", {
+const result = await cloudnest.uploadFiles("./invoice.pdf", {
   provider: "GOOGLE_DRIVE",
 });
-
 console.log(result.data);
 ```
 
-File management with API keys:
-
-```ts
-const files = await cloudnest.listFiles({ provider: "GOOGLE_DRIVE" });
-const file = await cloudnest.getFile("file-id");
-const preview = await cloudnest.getPreviewUrl("file-id");
-const playable = await cloudnest.getPlayableUrl("file-id");
-const download = await cloudnest.getDownloadUrl("file-id");
-await cloudnest.downloadFile("file-id", { destinationPath: "./file.bin" });
-await cloudnest.deleteFile("file-id");
-await cloudnest.deleteFiles(["file-id-1", "file-id-2"]);
-```
-
-Use `preview.previewUrl` for inline previews. Use `playable.playUrl` in `<video>` or `<audio>` when `playable.canPlay` is true.
-
-Important rules for AI agents:
-- Never hardcode, print, commit, or expose API keys.
-- Read API keys from `CLOUDNEST_API_KEY` or another secure environment variable.
-- The official package is `@cloudnest/sdk`; do not use similarly named packages.
-- Supported providers are `S3`, `GOOGLE_DRIVE`, and `TELEGRAM`.
-- Providers can be disabled by admins. Do not assume S3 is enabled.
-- If S3 is disabled or the user wants Google Drive, pass `provider: "GOOGLE_DRIVE"`.
-- Optional upload fields are `storageAccountId` and `providerFolderId`.
-- Direct REST fallback is `POST https://cloudnest.urmate.tech/api/v1/files/upload` with `Authorization: Bearer <API_KEY>` and multipart field `files`.
-- API-key file routes include list, metadata, preview/play URLs, download URLs, and delete under `https://cloudnest.urmate.tech/api/v1/files`.
-- CloudNest is an educational project and should be reviewed before handling sensitive production workloads.
-
-Read the full prompt at:
-https://cloudnest.urmate.tech/ai-prompt.md
+For the complete integration prompt, see https://cloudnest.urmate.tech/ai-prompt.md
+and https://cloudnest.urmate.tech/llms-full.txt.

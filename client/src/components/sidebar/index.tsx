@@ -1,6 +1,6 @@
 import { PROTECTED_ROUTES, PUBLIC_ROUTES } from "@/routes/common/routePath";
 import { NavLink, useLocation } from "react-router-dom";
-import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, Shield, Settings, Webhook } from "lucide-react";
+import { Activity, Database, Folder, FolderKanban, HelpCircle, Home, Key, LifeBuoy, Shield, Settings, Webhook } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTypedSelector } from "@/app/hook";
 
@@ -58,6 +58,11 @@ const SideBar = () => {
           },
         ]
       : []),
+    {
+      icon: LifeBuoy,
+      href: PROTECTED_ROUTES.SUPPORT,
+      label: "Support",
+    },
     {
       icon: Settings,
       href: PROTECTED_ROUTES.SETTINGS,

@@ -7,7 +7,11 @@ import StorageAccountModel, {
   StorageAccountDocument,
 } from '../models/storage-account.model';
 import { decryptJson, encryptJson } from '../utils/crypto';
-import { BadRequestException } from '../utils/app-error';
+import {
+  BadRequestException,
+  ConflictException,
+} from '../utils/app-error';
+import { ErrorCodeEnum } from '../enums/error-code.enum';
 import { logger } from '../utils/logger';
 import { getUploadStream } from '../utils/upload-source';
 import DriveFolderCacheModel from '../models/drive-folder-cache.model';
@@ -252,9 +256,14 @@ export class GoogleDriveStorageProvider implements StorageProvider {
             // Handle token refresh failures
             logger.error(`Failed to refresh token for account ${account._id}: ${error?.message}`);
             
-            // Re-throw with context for upstream error handling
+            // Re-throw with context for upstream error handling. A revoked/expired
+            // grant is a genuine auth failure that requires the user to reconnect,
+            // so surface it as a typed 409 rather than a generic 400.
             if (error.response?.data?.error === 'invalid_grant') {
-              throw new BadRequestException('Google Drive token refresh failed: access has been revoked');
+              throw new ConflictException(
+                'Google Drive access was revoked or expired. Please reconnect your Google account.',
+                ErrorCodeEnum.GOOGLE_REAUTH_REQUIRED,
+              );
             }
             throw error;
           }

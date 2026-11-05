@@ -37,6 +37,7 @@ import {
 import {
   useGetEnabledProvidersQuery,
   useGetStorageAccountsQuery,
+  useLazyGetGoogleAuthUrlQuery,
 } from "@/features/storageAccounts/storageAccountsAPI";
 
 const PROVIDERS: { value: StorageProvider; label: string }[] = [
@@ -96,6 +97,7 @@ const UploadFileLayout = (props: Props) => {
   const [deleteFolder] = useDeleteFolderMutation();
   const [moveGoogleDriveItem] = useMoveGoogleDriveItemMutation();
   const [deleteGoogleDriveItem] = useDeleteGoogleDriveItemMutation();
+  const [getGoogleAuthUrl] = useLazyGetGoogleAuthUrlQuery();
 
   const enabledProviders = useMemo(() => {
     if (!enabledProviderData) return PROVIDERS.map((provider) => provider.value);
@@ -114,7 +116,12 @@ const UploadFileLayout = (props: Props) => {
     () =>
       (storageAccountData?.accounts || []).filter(
         (account) =>
-          account.provider === "GOOGLE_DRIVE" && account.status === "ACTIVE"
+          account.provider === "GOOGLE_DRIVE" &&
+          // After the auth-drop fix an ERROR account with credentials can still
+          // be browsed and auto-recovers on the next successful call, so keep it
+          // selectable. Only truly unusable states are excluded.
+          account.status !== "DISABLED" &&
+          account.status !== "PENDING_AUTH",
       ),
     [storageAccountData]
   );
@@ -159,6 +166,7 @@ const UploadFileLayout = (props: Props) => {
     data: googleDriveData,
     isLoading: isGoogleDriveLoading,
     isFetching: isGoogleDriveFetching,
+    error: googleDriveError,
   } = useGetGoogleDriveItemsQuery(
     {
       accountId: selectedGoogleAccountId || "",
@@ -182,6 +190,26 @@ const UploadFileLayout = (props: Props) => {
   }, [driveFolderId, selectedGoogleAccountId, debouncedTerm, filter.pageSize]);
 
   const driveHasMore = !!googleDriveData?.pagination.hasMore;
+
+  // The backend surfaces a revoked/expired Google grant as a typed 409
+  // GOOGLE_REAUTH_REQUIRED. Rather than a dead-end error, prompt to reconnect.
+  const needsGoogleReauth =
+    activeProvider === "GOOGLE_DRIVE" &&
+    (googleDriveError as any)?.status === 409 &&
+    (googleDriveError as any)?.data?.errorCode === "GOOGLE_REAUTH_REQUIRED";
+
+  const reconnectGoogle = async () => {
+    try {
+      const res = await getGoogleAuthUrl("USER").unwrap();
+      if (res?.url) {
+        window.open(res.url, "_blank", "noopener");
+      } else {
+        toast.error("Could not start Google reconnect.");
+      }
+    } catch {
+      toast.error("Could not start Google reconnect.");
+    }
+  };
   const driveNext = () => {
     const token = googleDriveData?.pagination.nextPageToken;
     if (!token) return;
@@ -518,6 +546,22 @@ const UploadFileLayout = (props: Props) => {
               Connect a Google Drive account from Storage.
             </span>
           )}
+        </div>
+      )}
+      {needsGoogleReauth && (
+        <div className="mb-4 flex flex-col items-start justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center">
+          <div className="text-sm">
+            <div className="font-medium text-amber-600 dark:text-amber-300">
+              Google Drive needs to be reconnected
+            </div>
+            <div className="text-muted-foreground">
+              Your Google access was revoked or expired. Reconnect to restore
+              browsing — your files are safe.
+            </div>
+          </div>
+          <Button size="sm" onClick={reconnectGoogle}>
+            Reconnect Google Drive
+          </Button>
         </div>
       )}
       <div className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">

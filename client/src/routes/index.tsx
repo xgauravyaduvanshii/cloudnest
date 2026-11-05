@@ -18,6 +18,7 @@ import {
 } from "@/pages/public-pages";
 import SharePage from "@/pages/share";
 import Docs from "@/pages/docs";
+import { CookieConsent } from "@/components/cookie-consent";
 import { PUBLIC_ROUTES } from "./common/routePath";
 
 function AppRoutes() {
@@ -66,6 +67,7 @@ function AppRoutes() {
         {/* Catch-all for undefined routes */}
         <Route path="*" element={<>404</>} />
       </Routes>
+      <CookieConsent />
     </BrowserRouter>
   );
 }

@@ -18,11 +18,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTypedSelector } from "@/app/hook";
+import { Seo } from "@/components/seo/seo";
+import { PublicAnnouncementBar } from "@/components/notices/notices-panel";
 import {
   AUTH_ROUTES,
   PROTECTED_ROUTES,
   PUBLIC_ROUTES,
 } from "@/routes/common/routePath";
+import { SITE_URL } from "@/lib/site";
 
 const navItems = [
   { label: "Platform", href: "#platform" },
@@ -100,6 +103,25 @@ const providerRows = [
   },
 ];
 
+const faqs = [
+  {
+    q: "What is CloudNest?",
+    a: "CloudNest is a multi-provider cloud storage control plane. It gives you one clean experience for uploading, browsing, previewing, and downloading files while routing storage to whichever providers an admin has enabled: Google Drive, Telegram, and AWS S3.",
+  },
+  {
+    q: "Do I need to use every provider?",
+    a: "No. Admins enable or pause each provider independently, and uploads automatically route to an active personal account or shared admin storage.",
+  },
+  {
+    q: "How are my provider credentials protected?",
+    a: "OAuth refresh tokens, Telegram sessions, and S3 secrets are encrypted at rest and are write-only from the dashboard. Admin actions are audited.",
+  },
+  {
+    q: "Is there an SDK and an API for AI agents?",
+    a: "Yes. Install the official @cloudnest/sdk, or give a coding agent the copy-ready prompt on the AI Prompt page. API keys are created, rotated, and revoked from the dashboard.",
+  },
+];
+
 const Landing = () => {
   const { accessToken, user } = useTypedSelector((state) => state.auth);
   const isSignedIn = Boolean(accessToken && user);
@@ -108,8 +130,46 @@ const Landing = () => {
     ? PROTECTED_ROUTES.OVERVIEW
     : AUTH_ROUTES.SIGN_IN;
 
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "CloudNest",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web",
+      url: SITE_URL,
+      description:
+        "Multi-provider cloud storage control plane for Google Drive, Telegram, and AWS S3.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ];
+
   return (
     <div className="min-h-screen overflow-hidden bg-[#070202] text-white">
+      <Seo
+        path="/"
+        title="CloudNest — Multi-Provider Cloud Storage Control Plane"
+        description="Manage uploads, API keys, folders, previews, and downloads across Google Drive, Telegram, and AWS S3 from one dashboard. Ships with a React app, Express/Postgres backend, and the @cloudnest/sdk."
+        keywords={[
+          "cloud storage",
+          "multi-provider storage",
+          "google drive api",
+          "telegram storage",
+          "aws s3 upload api",
+          "file upload platform",
+        ]}
+        jsonLd={jsonLd}
+      />
+      <PublicAnnouncementBar />
       <section className="relative min-h-[92svh] overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,72,80,.22),transparent_24%),linear-gradient(135deg,#080202_0%,#170506_45%,#390a0d_76%,#71161b_120%)]" />
         <div className="absolute inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(255,255,255,.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.1)_1px,transparent_1px)] [background-size:96px_96px]" />
@@ -426,6 +486,64 @@ const Landing = () => {
               <Cloud className="size-4 text-red-200" />
               <span>One gateway for every enabled storage provider.</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="faq"
+        className="relative overflow-hidden border-t border-white/10 bg-[#100303] px-5 py-20 sm:px-8"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,72,80,.14),transparent_32%),linear-gradient(180deg,#0a0202,#1c0505_60%,#100303)]" />
+        <div className="relative z-10 mx-auto max-w-3xl">
+          <p className="text-sm font-medium text-red-200">FAQ</p>
+          <h2 className="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+            Questions, answered.
+          </h2>
+          <div className="mt-8 space-y-3">
+            {faqs.map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-[10px] border border-white/10 bg-white/[0.035] p-5 open:bg-white/[0.05]"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-medium text-white">
+                  {item.q}
+                  <ArrowRight className="size-4 shrink-0 text-red-200 transition group-open:rotate-90" />
+                </summary>
+                <p className="mt-3 text-sm leading-7 text-white/60">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden border-t border-white/10 bg-[#120404] px-5 py-20 sm:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,54,66,.18),transparent_40%),linear-gradient(180deg,#120404,#070202)]" />
+        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
+          <h2 className="text-3xl font-semibold leading-tight text-white sm:text-4xl">
+            One gateway for every storage provider.
+          </h2>
+          <p className="max-w-xl text-base leading-7 text-white/60">
+            Create an account, connect a provider, and start uploading — or wire
+            CloudNest into your own app with the SDK and a single API key.
+          </p>
+          <div className="mt-2 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              asChild
+              className="h-11 rounded-[8px] bg-red-500 px-6 text-white hover:bg-red-400"
+            >
+              <Link to={primaryHref}>
+                {isSignedIn ? "Open workspace" : "Get started free"}
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 rounded-[8px] border-white/15 bg-white/[0.04] px-6 text-white hover:bg-white/10 hover:text-white"
+            >
+              <Link to={PUBLIC_ROUTES.DOCS}>Read the docs</Link>
+            </Button>
           </div>
         </div>
       </section>

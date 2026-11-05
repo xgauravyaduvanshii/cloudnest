@@ -23,6 +23,17 @@ import {
   adminUpdateUserController,
   adminUsersController,
 } from '../../controllers/admin.controller';
+import {
+  adminDeleteContactRequestController,
+  adminListContactRequestsController,
+  adminUpdateContactStatusController,
+} from '../../controllers/contact.controller';
+import {
+  adminCreateNoticeController,
+  adminDeleteNoticeController,
+  adminListNoticesController,
+  adminUpdateNoticeController,
+} from '../../controllers/notices.controller';
 
 const adminRoutes = Router();
 
@@ -62,5 +73,17 @@ adminRoutes.post('/ai-settings/fetch-models', adminFetchAiModelsController);
 adminRoutes.get('/ai-models', adminAiModelsController);
 adminRoutes.patch('/ai-models/:id', adminSetAiModelEnabledController);
 adminRoutes.delete('/ai-models/:id', adminDeleteAiModelController);
+
+adminRoutes.get('/contact-requests', adminListContactRequestsController);
+adminRoutes.patch(
+  '/contact-requests/:id/status',
+  adminUpdateContactStatusController,
+);
+adminRoutes.delete('/contact-requests/:id', adminDeleteContactRequestController);
+
+adminRoutes.get('/notices', adminListNoticesController);
+adminRoutes.post('/notices', adminCreateNoticeController);
+adminRoutes.patch('/notices/:id', adminUpdateNoticeController);
+adminRoutes.delete('/notices/:id', adminDeleteNoticeController);
 
 export default adminRoutes;

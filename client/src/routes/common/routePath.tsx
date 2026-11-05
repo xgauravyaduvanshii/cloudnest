@@ -31,4 +31,5 @@ export const PROTECTED_ROUTES = {
   STORAGE_ACCOUNTS: "/storage-accounts",
   ADMIN: "/admin",
   SETTINGS: "/settings",
+  SUPPORT: "/support",
 };

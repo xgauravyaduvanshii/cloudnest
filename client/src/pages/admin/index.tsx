@@ -1,5 +1,7 @@
 import PageLayout from "@/components/page-layout";
 import AiSettingsSection from "./_component/ai-settings";
+import ContactRequestsSection from "./_component/contact-requests";
+import NoticesAdminSection from "./_component/notices-admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -284,6 +286,8 @@ const Admin = () => {
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
           <TabsTrigger value="ai">AI</TabsTrigger>
+          <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="notices">Notices</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -710,6 +714,14 @@ const Admin = () => {
 
         <TabsContent value="ai">
           <AiSettingsSection />
+        </TabsContent>
+
+        <TabsContent value="requests">
+          <ContactRequestsSection />
+        </TabsContent>
+
+        <TabsContent value="notices">
+          <NoticesAdminSection />
         </TabsContent>
       </Tabs>
     </PageLayout>
